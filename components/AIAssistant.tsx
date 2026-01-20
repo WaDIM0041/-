@@ -111,7 +111,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ projectContext }) => {
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSend()}
                 placeholder="Задайте технический вопрос..."
-                className="flex-1 bg-slate-50 px-5 py-4 rounded-2xl text-sm font-bold border border-slate-100 outline-none focus:ring-4 focus:ring-blue-50 transition-all"
+                className="flex-1 bg-slate-50 px-5 py-4 rounded-2xl text-sm font-bold text-slate-700 border border-slate-100 outline-none focus:ring-4 focus:ring-blue-50 transition-all"
               />
               <button 
                 onClick={handleSend}

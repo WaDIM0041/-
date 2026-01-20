@@ -75,7 +75,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   return (
     <div className="space-y-8 animate-in slide-in-from-right-10 duration-500 pb-20">
-      {/* Simulation section only for Admin */}
       <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm border-l-4 border-l-amber-500">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 bg-amber-50 text-amber-600 rounded-lg"><Monitor size={20} /></div>
@@ -112,12 +111,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       </div>
 
-      {/* Inline User Form */}
       {showForm && (
         <div className="bg-white rounded-[2.5rem] p-8 border-2 border-blue-500 shadow-2xl animate-in slide-in-from-top-4 duration-300">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter">
-              {modalMode === 'create' ? 'Регистрация сотрудника' : 'Редактирование данных'}
+              {modalMode === 'create' ? 'Регистрация персонала' : 'Редактирование данных'}
             </h3>
             <button onClick={() => setShowForm(false)} className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:text-slate-800 transition-colors">
               <X size={20} />
@@ -128,19 +126,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                  <UserIcon size={12} /> Логин для входа
+                  <UserIcon size={12} /> Логин
                 </label>
                 <input 
                   required 
                   value={userForm.username} 
                   onChange={e => setUserForm({...userForm, username: e.target.value})} 
                   className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] outline-none font-bold text-slate-700 focus:ring-4 focus:ring-blue-50 transition-all" 
-                  placeholder="Придумайте логин" 
+                  placeholder="Логин сотрудника" 
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
-                  <Lock size={12} /> Временный пароль
+                  <Lock size={12} /> Пароль
                 </label>
                 <input 
                   required 
@@ -148,13 +146,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   value={userForm.password} 
                   onChange={e => setUserForm({...userForm, password: e.target.value})} 
                   className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] outline-none font-bold text-slate-700 focus:ring-4 focus:ring-blue-50 transition-all" 
-                  placeholder="Пароль доступа" 
+                  placeholder="Пароль" 
                 />
               </div>
             </div>
 
             <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Назначить роль в системе</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Роль в системе</label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {Object.entries(ROLE_LABELS).map(([value, label]) => (
                   <button 
@@ -186,14 +184,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 type="submit" 
                 className="flex-[2] bg-blue-600 text-white font-black py-5 rounded-[1.5rem] uppercase tracking-widest text-[10px] shadow-2xl hover:bg-blue-700 active:scale-[0.98] transition-all"
               >
-                {modalMode === 'create' ? 'Создать аккаунт и выдать доступ' : 'Сохранить изменения'}
+                {modalMode === 'create' ? 'Добавить в штат' : 'Сохранить изменения'}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* User List section */}
       <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
         <div className="p-8 border-b border-slate-50 flex items-center justify-between">
           <div>

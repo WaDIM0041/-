@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'zodchiy-v5';
+const CACHE_NAME = 'zodchiy-standard-v1';
 const ASSETS = [
   '/',
   '/index.html',
@@ -11,7 +11,7 @@ const ASSETS = [
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then(c => {
-      console.log('Caching shell assets');
+      console.log('Caching Zodchiy Standard assets');
       return c.addAll(ASSETS);
     })
   );
@@ -30,10 +30,7 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // Не кэшируем запросы к API
   if (e.request.url.includes('/api/')) return;
-
-  // Для навигационных запросов (обновление страницы) возвращаем index.html из кэша
   if (e.request.mode === 'navigate') {
     e.respondWith(
       fetch(e.request).catch(() => caches.match('/index.html'))
@@ -41,7 +38,6 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Стратегия: Сначала сеть, если нет — кэш
   e.respondWith(
     fetch(e.request)
       .then(res => {

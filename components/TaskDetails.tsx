@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Task, TaskStatus, UserRole, ROLE_LABELS, TASK_STATUS_LABELS } from '../types.ts';
+import { Task, TaskStatus, UserRole, ROLE_LABELS, TASK_STATUS_LABELS, ProjectFile, FileCategory } from '../types.ts';
 import { 
   Camera, 
   Play, 
@@ -18,9 +18,11 @@ import {
   ImagePlus,
   Sparkles,
   AlertTriangle,
-  CheckCircle2
+  CheckCircle2,
+  Eye
 } from 'lucide-react';
 import { analyzeConstructionTask } from '../services/aiService.ts';
+import { FilePreviewer } from './FilePreviewer.tsx';
 
 interface TaskDetailsProps {
   task: Task;
@@ -51,6 +53,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
   const [showReworkInput, setShowReworkInput] = useState(false);
   const [newCommentText, setNewCommentText] = useState('');
   const [isAIAnalyzing, setIsAIAnalyzing] = useState(false);
+  const [previewImage, setPreviewImage] = useState<{url: string, index: number} | null>(null);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -113,6 +116,16 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
 
   return (
     <div className="animate-in slide-in-from-right-4 duration-300 bg-white min-h-full rounded-[2.5rem] p-6 shadow-sm border border-slate-100 pb-12">
+      {/* Photo Preview Overlay */}
+      {previewImage && (
+        <FilePreviewer 
+          url={previewImage.url} 
+          name={`Фотоотчет #${previewImage.index + 1}`} 
+          category={FileCategory.PHOTO} 
+          onClose={() => setPreviewImage(null)} 
+        />
+      )}
+
       <div className="flex items-center justify-between mb-10">
         <button onClick={onClose} className="flex items-center gap-3 text-slate-500 font-black text-[11px] uppercase tracking-widest bg-slate-50 px-5 py-4 rounded-2xl border border-slate-100 shadow-sm transition-all active:scale-95">
           <ChevronLeft size={22} /> Назад
@@ -139,7 +152,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
         <p className="text-slate-600 text-base font-medium leading-relaxed">{task.description}</p>
       </div>
 
-      {/* AI Analysis Summary if exists */}
+      {/* AI Analysis Summary */}
       {task.aiAnalysis && (
         <div className={`mb-10 p-6 rounded-[2rem] border-2 animate-in slide-in-from-top-4 ${
           task.aiAnalysis.status === 'passed' ? 'bg-emerald-50/50 border-emerald-100' : 
@@ -202,9 +215,16 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
               </div>
             ) : (
               task.evidenceUrls.map((url, i) => (
-                <div key={i} className="aspect-square bg-slate-100 rounded-[1.5rem] overflow-hidden border border-slate-100 shadow-sm relative group active:scale-95 transition-all">
-                  <img src={url} alt={`Evidence ${i}`} className="w-full h-full object-cover" onClick={() => window.open(url, '_blank')} />
+                <div 
+                  key={i} 
+                  onClick={() => setPreviewImage({ url, index: i })}
+                  className="aspect-square bg-slate-100 rounded-[1.5rem] overflow-hidden border border-slate-100 shadow-sm relative group active:scale-95 transition-all cursor-pointer"
+                >
+                  <img src={url} alt={`Evidence ${i}`} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
                   <div className="absolute top-2 right-2 bg-black/40 text-white px-2 py-1 rounded-lg text-[9px] font-black">#{i+1}</div>
+                  <div className="absolute inset-0 bg-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Eye size={24} className="text-white" />
+                  </div>
                 </div>
               ))
             )}
@@ -222,11 +242,11 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
               </div>
             ) : (
               task.comments?.map((c) => (
-                <div key={c.id} className={`flex flex-col ${c.role === role ? 'items-end' : 'items-start'}`}>
-                  <div className={`max-w-[90%] p-4 rounded-2xl shadow-sm border ${c.role === role ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-800 border-slate-100'}`}>
+                <div key={c.id} className={`flex flex-col ${c.author === role ? 'items-end' : 'items-start'}`}>
+                  <div className={`max-w-[90%] p-4 rounded-2xl shadow-sm border ${c.author === role ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-800 border-slate-100'}`}>
                     <div className="flex justify-between items-center gap-5 mb-2">
-                      <span className={`text-[9px] font-black uppercase tracking-widest ${c.role === role ? 'text-blue-100' : 'text-blue-600'}`}>{c.author}</span>
-                      <span className={`text-[8px] font-bold uppercase ${c.role === role ? 'text-white/60' : 'text-slate-300'}`}>{new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className={`text-[8px] font-black uppercase tracking-widest ${c.author === role ? 'text-blue-100' : 'text-blue-600'}`}>{c.author}</span>
+                      <span className={`text-[8px] font-bold uppercase ${c.author === role ? 'text-white/60' : 'text-slate-300'}`}>{new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     <p className="text-sm font-bold leading-relaxed">{c.text}</p>
                   </div>
@@ -242,7 +262,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
               onChange={(e) => setNewCommentText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendComment()}
               placeholder="Напишите комментарий..." 
-              className="flex-1 bg-transparent px-5 py-4 text-base font-bold text-slate-800 outline-none"
+              className="flex-1 bg-transparent px-5 py-4 text-base font-bold text-slate-700 outline-none"
             />
             <button onClick={handleSendComment} className="bg-blue-600 text-white p-4 rounded-2xl shadow-xl shadow-blue-100 active:scale-90 transition-all">
               <SendHorizontal size={24} />

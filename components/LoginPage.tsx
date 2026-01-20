@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { User as UserIcon, Lock, AlertCircle, ArrowRight, Info, RefreshCw, Building2 } from 'lucide-react';
+import React from 'react';
+import { Shield, Activity, Users, Eye, Building2, ChevronRight } from 'lucide-react';
 import { User, UserRole, ROLE_LABELS } from '../types.ts';
 
 interface LoginPageProps {
@@ -9,144 +9,73 @@ interface LoginPageProps {
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ users, onLogin }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [showHints, setShowHints] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    // Очищаем пробелы для надежности
-    const cleanUsername = username.trim().toLowerCase();
-    const cleanPassword = password.trim();
-
-    const user = users.find(u => 
-      u.username.toLowerCase().trim() === cleanUsername && 
-      (u.password === cleanPassword || (!u.password && cleanPassword === '123'))
-    );
-
-    if (user) {
-      onLogin(user);
-    } else {
-      setError('Неверное имя пользователя или пароль');
+  const getRoleIcon = (role: UserRole) => {
+    switch (role) {
+      case UserRole.ADMIN: return <Shield size={32} />;
+      case UserRole.MANAGER: return <Activity size={32} />;
+      case UserRole.FOREMAN: return <Users size={32} />;
+      case UserRole.SUPERVISOR: return <Eye size={32} />;
     }
   };
 
-  const handleResetData = () => {
-    if (window.confirm('Вы уверены, что хотите сбросить все локальные данные? Это удалит проекты и задачи, созданные в демо-режиме.')) {
-      localStorage.clear();
-      window.location.reload();
+  const getRoleTheme = (role: UserRole) => {
+    switch (role) {
+      case UserRole.ADMIN: return 'from-amber-500 to-orange-600 shadow-amber-200/50';
+      case UserRole.MANAGER: return 'from-indigo-500 to-purple-600 shadow-indigo-200/50';
+      case UserRole.FOREMAN: return 'from-blue-500 to-cyan-600 shadow-blue-200/50';
+      case UserRole.SUPERVISOR: return 'from-emerald-500 to-teal-600 shadow-emerald-200/50';
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      {/* Декоративные элементы фона */}
+      {/* Background Decor */}
       <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500 rounded-full blur-[120px]"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500 rounded-full blur-[120px]"></div>
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-500 rounded-full blur-[140px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-500 rounded-full blur-[140px]"></div>
       </div>
 
-      <div className="w-full max-w-md z-10">
-        <div className="text-center mb-10 animate-in fade-in slide-in-from-top-4 duration-700 flex flex-col items-center">
-          <div className="bg-white/10 backdrop-blur-lg p-5 rounded-[2.5rem] shadow-2xl mb-6 border border-white/10">
-            <Building2 size={60} className="text-white" />
+      <div className="w-full max-w-lg z-10 space-y-12">
+        <div className="text-center animate-in fade-in slide-in-from-top-4 duration-700">
+          <div className="inline-flex bg-white/10 backdrop-blur-xl p-5 rounded-[2.5rem] shadow-2xl mb-8 border border-white/10">
+            <Building2 size={64} className="text-white" />
           </div>
-          <h1 className="text-3xl font-black text-white uppercase tracking-tighter">
-            ЗОДЧИЙ <span className="text-blue-500">Projects</span>
+          <h1 className="text-4xl font-black text-white uppercase tracking-tighter leading-none">
+            ЗОДЧИЙ <span className="text-blue-500">PRO</span>
           </h1>
-          <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.4em] mt-2">
-            Construction Management System
+          <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.5em] mt-3">
+            Construction Management
           </p>
         </div>
 
-        <div className="bg-white rounded-[2.5rem] p-8 shadow-2xl animate-in zoom-in-95 duration-500">
-          <h2 className="text-xl font-black text-slate-800 mb-6 tracking-tight">Вход в систему</h2>
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-200">
+          <p className="text-center text-white/40 text-[10px] font-black uppercase tracking-widest mb-6">Выберите ваш профиль для входа</p>
           
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-1.5">
-              <label className="text-[9px] font-black text-slate-400 uppercase ml-1 tracking-widest">Логин</label>
-              <div className="relative">
-                <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-                <input 
-                  autoFocus
-                  required
-                  type="text"
-                  placeholder="админ"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-200 transition-all font-bold text-slate-700 text-sm"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[9px] font-black text-slate-400 uppercase ml-1 tracking-widest">Пароль</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-                <input 
-                  required
-                  type="password"
-                  placeholder="123"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-200 transition-all font-bold text-slate-700 text-sm"
-                />
-              </div>
-            </div>
-
-            {error && (
-              <div className="flex items-center gap-2 text-rose-600 bg-rose-50 p-3.5 rounded-xl animate-in shake duration-300 border border-rose-100">
-                <AlertCircle size={16} />
-                <p className="text-[10px] font-black uppercase tracking-tight">{error}</p>
-              </div>
-            )}
-
-            <button 
-              type="submit"
-              className="w-full bg-blue-600 text-white font-black py-4 rounded-xl uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 shadow-lg shadow-blue-100 hover:bg-blue-700 active:scale-[0.98] transition-all mt-2"
-            >
-              Войти в систему
-              <ArrowRight size={16} strokeWidth={3} />
-            </button>
-          </form>
-
-          <div className="mt-8 pt-6 border-t border-slate-50">
-            <button 
-              onClick={() => setShowHints(!showHints)}
-              className="flex items-center gap-2 text-[9px] font-black text-blue-500 uppercase tracking-widest mx-auto"
-            >
-              <Info size={14} />
-              {showHints ? 'Скрыть подсказки' : 'Демо-аккаунты'}
-            </button>
-
-            {showHints && (
-              <div className="mt-4 grid grid-cols-1 gap-2 animate-in slide-in-from-top-2 duration-200">
-                {users.map(u => (
-                  <button 
-                    key={u.id}
-                    onClick={() => { setUsername(u.username); setPassword('123'); }}
-                    className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 hover:border-blue-200 transition-all"
-                  >
-                    <span className="text-[10px] font-bold text-slate-700">{u.username}</span>
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">{ROLE_LABELS[u.role]}</span>
-                  </button>
-                ))}
-                <p className="text-[8px] text-center text-slate-300 font-bold uppercase mt-2">Пароль для всех: 123</p>
-              </div>
-            )}
+          <div className="grid grid-cols-1 gap-3">
+            {users.map((user) => (
+              <button 
+                key={user.id}
+                onClick={() => onLogin(user)}
+                className="group relative flex items-center gap-5 p-1 bg-white/5 backdrop-blur-md rounded-[2rem] border border-white/10 hover:bg-white/10 transition-all active:scale-[0.98] text-left"
+              >
+                <div className={`w-20 h-20 rounded-[1.8rem] bg-gradient-to-br ${getRoleTheme(user.role)} flex items-center justify-center text-white shadow-xl transition-transform group-hover:scale-105`}>
+                  {getRoleIcon(user.role)}
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-black text-white leading-none mb-1">{user.username}</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{ROLE_LABELS[user.role]}</p>
+                </div>
+                <div className="pr-6 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+                  <ChevronRight className="text-white/20" size={24} />
+                </div>
+              </button>
+            ))}
           </div>
         </div>
 
-        <button 
-          onClick={handleResetData}
-          className="mt-8 flex items-center gap-2 text-[9px] font-black text-white/30 uppercase tracking-widest mx-auto hover:text-white/60 transition-colors"
-        >
-          <RefreshCw size={12} />
-          Сбросить все данные приложения
-        </button>
+        <div className="pt-8 text-center border-t border-white/5">
+           <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em]">Zodchiy Standard v7.1 • Secure Access</p>
+        </div>
       </div>
     </div>
   );

@@ -80,7 +80,7 @@ export const ProjectChat: React.FC<ProjectChatProps> = ({ messages, currentUser,
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
           placeholder="Напишите комментарий..." 
-          className="flex-1 bg-slate-50 px-5 py-4 rounded-2xl text-sm font-bold outline-none border border-slate-100 focus:ring-4 focus:ring-blue-50 transition-all shadow-inner"
+          className="flex-1 bg-slate-50 px-5 py-4 rounded-2xl text-sm font-bold text-slate-700 outline-none border border-slate-100 focus:ring-4 focus:ring-blue-50 transition-all shadow-inner"
         />
         <button 
           onClick={handleSend} 
