@@ -57,22 +57,21 @@ export const ProjectChat: React.FC<ProjectChatProps> = ({ messages, currentUser,
         ) : (
           messages.map((msg) => (
             <div key={msg.id} className={`flex flex-col ${msg.author === currentUser.username ? 'items-end' : 'items-start'}`}>
-              <div className={`max-w-[90%] rounded-[1.5rem] p-4 shadow-sm ${msg.author === currentUser.username ? 'bg-blue-600 text-white' : 'bg-white text-slate-800 border border-slate-100'}`}>
+              <div className={`max-w-[90%] rounded-[1.5rem] p-4 shadow-sm ${msg.author === currentUser.username ? 'bg-blue-600 text-slate-100' : 'bg-white text-slate-800 border border-slate-100'}`}>
                 <div className="flex items-center gap-2 mb-2">
                   <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-lg flex items-center gap-1.5 ${msg.author === currentUser.username ? 'text-blue-100 bg-white/10' : getRoleColor(msg.role)}`}>
                     {getRoleIcon(msg.role)} {msg.author}
                   </span>
-                  <span className={`text-[7px] font-bold ${msg.author === currentUser.username ? 'text-white/60' : 'text-slate-400'}`}>
+                  <span className={`text-[7px] font-bold ${msg.author === currentUser.username ? 'text-slate-100/60' : 'text-slate-400'}`}>
                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
-                <p className="text-xs font-bold leading-relaxed">{msg.text}</p>
+                <p className="text-xs font-bold leading-relaxed text-left">{msg.text}</p>
               </div>
             </div>
           ))
         )}
       </div>
-
       <div className="p-4 bg-white border-t border-slate-100 flex gap-3">
         <input 
           type="text" 
@@ -80,11 +79,11 @@ export const ProjectChat: React.FC<ProjectChatProps> = ({ messages, currentUser,
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
           placeholder="Напишите комментарий..." 
-          className="flex-1 bg-slate-50 px-5 py-4 rounded-2xl text-sm font-bold text-slate-700 outline-none border border-slate-100 focus:ring-4 focus:ring-blue-50 transition-all shadow-inner"
+          className="flex-1 bg-slate-50 px-5 py-4 rounded-2xl text-sm font-bold text-slate-900 placeholder:text-slate-400 outline-none border border-slate-100 focus:ring-4 focus:ring-blue-50 transition-all shadow-inner"
         />
         <button 
           onClick={handleSend} 
-          className="bg-blue-600 text-white p-4 rounded-2xl active:scale-90 transition-all shadow-lg shadow-blue-100"
+          className="bg-blue-600 text-slate-100 p-4 rounded-2xl active:scale-90 transition-all shadow-lg shadow-blue-100"
         >
           <SendHorizontal size={24} />
         </button>

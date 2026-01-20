@@ -33,9 +33,9 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, role, isAdmin = false }) => {
   const commentsList = task.comments || [];
   
   return (
-    <div className="bg-white rounded-2xl sm:rounded-[2rem] shadow-sm border border-slate-100 p-4 sm:p-6 mb-3 transition-all active:scale-[0.98] cursor-pointer hover:border-blue-200 group relative overflow-hidden">
+    <div className="bg-white rounded-2xl sm:rounded-[2rem] shadow-sm border border-slate-100 p-4 sm:p-6 mb-3 transition-all active:scale-[0.98] cursor-pointer hover:border-blue-200 group relative overflow-hidden text-left">
       {isAdmin && (
-        <div className="absolute top-0 right-0 p-1 bg-blue-600 text-white rounded-bl-lg shadow-sm z-10">
+        <div className="absolute top-0 right-0 p-1 bg-blue-600 text-slate-100 rounded-bl-lg shadow-sm z-10">
           <ShieldCheck size={12} className="sm:w-3.5 sm:h-3.5" />
         </div>
       )}

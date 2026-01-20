@@ -24,7 +24,6 @@ export const BackupManager: React.FC<BackupManagerProps> = ({ currentUser, onDat
   const [showQRModal, setShowQRModal] = useState(false);
   const [importKeyText, setImportKeyText] = useState('');
 
-  // Надежное кодирование UTF-8 для Base64
   const toBase64 = (str: string) => {
     return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (_, p1) => 
       String.fromCharCode(parseInt(p1, 16))
@@ -181,17 +180,15 @@ export const BackupManager: React.FC<BackupManagerProps> = ({ currentUser, onDat
 
   return (
     <div className="space-y-4 pb-24 px-1 animate-in fade-in">
-      {/* ПАНЕЛЬ ОБЛАКА */}
-      <div className="bg-slate-900 rounded-[2.5rem] p-6 text-white shadow-2xl border border-white/5 overflow-hidden relative">
+      <div className="bg-slate-900 rounded-[2.5rem] p-6 text-slate-100 shadow-2xl border border-white/5 overflow-hidden relative">
         <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 blur-[60px] rounded-full -mr-16 -mt-16"></div>
-        
         <div className="flex items-center justify-between mb-8 relative z-10">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-900/40">
-              <Database size={24} />
+              <Database size={24} className="text-slate-100" />
             </div>
             <div>
-              <h2 className="text-lg font-black uppercase tracking-tight leading-none">Облако</h2>
+              <h2 className="text-lg font-black uppercase tracking-tight leading-none text-slate-100">Облако</h2>
               <span className={`text-[9px] font-black uppercase tracking-widest mt-1 block ${syncStatus === 'valid' ? 'text-emerald-400' : 'text-slate-500'}`}>
                 {syncStatus === 'valid' ? 'Синхронизация активна' : 'Ожидание настройки'}
               </span>
@@ -201,7 +198,6 @@ export const BackupManager: React.FC<BackupManagerProps> = ({ currentUser, onDat
             <RefreshCw size={20} />
           </button>
         </div>
-
         <div className="grid grid-cols-2 gap-3 relative z-10">
           <button 
             onClick={handlePullFromGithub} 
@@ -209,28 +205,25 @@ export const BackupManager: React.FC<BackupManagerProps> = ({ currentUser, onDat
             className="flex flex-col items-center gap-3 bg-white/5 hover:bg-white/10 py-6 rounded-3xl border border-white/10 transition-all active:scale-95 disabled:opacity-50"
           >
             <Download size={24} className="text-blue-400" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Загрузить</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-100">Загрузить</span>
           </button>
           <button 
             onClick={handleSaveToGithub} 
             disabled={isSyncing}
             className="flex flex-col items-center gap-3 bg-blue-600 hover:bg-blue-700 py-6 rounded-3xl transition-all active:scale-95 disabled:opacity-50 shadow-xl shadow-blue-900/20"
           >
-            <Upload size={24} className="text-white" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-white">Сохранить</span>
+            <Upload size={24} className="text-slate-100" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-100">Сохранить</span>
           </button>
         </div>
       </div>
 
-      {/* РАЗДЕЛ С КЛЮЧАМИ */}
       <div className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm space-y-8">
-        {/* Экспорт (для того, кто настроил GitHub) */}
         <div>
           <div className="flex items-center gap-2 mb-4">
              <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg"><Key size={14} /></div>
              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Мой ключ (для команды)</h4>
           </div>
-          
           {ghConfig.token ? (
             <div className="space-y-3">
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center gap-3 group">
@@ -249,16 +242,12 @@ export const BackupManager: React.FC<BackupManagerProps> = ({ currentUser, onDat
             </div>
           )}
         </div>
-
         <div className="h-px bg-slate-50"></div>
-
-        {/* Импорт (для того, кто подключается) */}
         <div>
           <div className="flex items-center gap-2 mb-4">
              <div className="p-1.5 bg-amber-50 text-amber-600 rounded-lg"><ArrowRightLeft size={14} /></div>
              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Вставить ключ другого устройства</h4>
           </div>
-          
           <div className="space-y-3">
             <div className="flex gap-2">
               <input 
@@ -266,12 +255,12 @@ export const BackupManager: React.FC<BackupManagerProps> = ({ currentUser, onDat
                 value={importKeyText}
                 onChange={e => setImportKeyText(e.target.value)}
                 placeholder="Вставьте сюда код от начальника..."
-                className="flex-1 bg-slate-50 border border-slate-100 rounded-xl px-4 py-4 text-[11px] font-bold outline-none focus:ring-4 focus:ring-blue-50 transition-all"
+                className="flex-1 bg-slate-50 border border-slate-100 rounded-xl px-4 py-4 text-[11px] font-bold outline-none focus:ring-4 focus:ring-blue-50 transition-all text-slate-900 placeholder:text-slate-400"
               />
               <button 
                 onClick={handleImportKey}
                 disabled={!importKeyText.trim()}
-                className="bg-slate-900 text-white px-6 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-30 active:scale-95 transition-all shadow-lg"
+                className="bg-slate-900 text-slate-100 px-6 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-30 active:scale-95 transition-all shadow-lg"
               >
                 ОК
               </button>
@@ -281,10 +270,9 @@ export const BackupManager: React.FC<BackupManagerProps> = ({ currentUser, onDat
             </p>
           </div>
         </div>
-
         <button 
           onClick={() => setShowQRModal(true)}
-          className="w-full flex items-center justify-between p-5 bg-blue-600 text-white rounded-2xl shadow-xl shadow-blue-100 active:scale-95 transition-all"
+          className="w-full flex items-center justify-between p-5 bg-blue-600 text-slate-100 rounded-2xl shadow-xl shadow-blue-100 active:scale-95 transition-all"
         >
           <div className="flex items-center gap-3">
             <QrCode size={20} />
@@ -294,17 +282,15 @@ export const BackupManager: React.FC<BackupManagerProps> = ({ currentUser, onDat
         </button>
       </div>
 
-      {/* РУЧНЫЕ НАСТРОЙКИ (МАСТЕР) */}
       <div className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
             <Github size={14} /> Прямая настройка (GitHub)
           </h4>
-          <button onClick={() => setShowAdvanced(!showAdvanced)} className="text-[9px] font-black text-blue-600 uppercase">
+          <button onClick={() => setShowAdvanced(!showAdvanced)} className="text-[9px] font-black text-blue-600 uppercase transition-colors">
             {showAdvanced ? 'Скрыть' : 'Настроить'}
           </button>
         </div>
-
         {showAdvanced && (
           <div className="space-y-4 animate-in slide-in-from-top-2">
             <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex gap-3 mb-2">
@@ -319,7 +305,7 @@ export const BackupManager: React.FC<BackupManagerProps> = ({ currentUser, onDat
                 type="password" 
                 value={ghConfig.token}
                 onChange={e => setGhConfig({...ghConfig, token: e.target.value})}
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-[11px] font-bold outline-none"
+                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-[11px] font-bold outline-none text-slate-900 placeholder:text-slate-400 transition-all focus:ring-4 focus:ring-blue-50"
                 placeholder="ghp_..."
               />
             </div>
@@ -329,13 +315,13 @@ export const BackupManager: React.FC<BackupManagerProps> = ({ currentUser, onDat
                 type="text" 
                 value={ghConfig.repo}
                 onChange={e => setGhConfig({...ghConfig, repo: e.target.value})}
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-[11px] font-bold outline-none"
+                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-[11px] font-bold outline-none text-slate-900 placeholder:text-slate-400 transition-all focus:ring-4 focus:ring-blue-50"
                 placeholder="ivanov/my-projects"
               />
             </div>
             <button 
               onClick={testConnection}
-              className="w-full bg-slate-800 text-white py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest"
+              className="w-full bg-slate-800 text-slate-100 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg"
             >
               Проверить подключение
             </button>
@@ -343,7 +329,6 @@ export const BackupManager: React.FC<BackupManagerProps> = ({ currentUser, onDat
         )}
       </div>
 
-      {/* MODAL QR */}
       {showQRModal && (
         <div className="fixed inset-0 z-[150] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in">
           <div className="bg-white w-full max-w-sm rounded-[3rem] p-8 text-center relative shadow-2xl">
@@ -351,7 +336,6 @@ export const BackupManager: React.FC<BackupManagerProps> = ({ currentUser, onDat
               <X size={24} />
             </button>
             <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter mb-8">Доступ команде</h3>
-            
             <div className="bg-white p-4 rounded-[2.5rem] border-4 border-slate-50 shadow-inner inline-block mb-8">
                <img 
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(new URL(window.location.origin + '?config=' + generateConfigToken()).toString())}`} 
@@ -359,14 +343,12 @@ export const BackupManager: React.FC<BackupManagerProps> = ({ currentUser, onDat
                 className="w-64 h-64 rounded-2xl"
                />
             </div>
-
             <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed px-4">
               Попросите коллегу открыть камеру телефона и отсканировать этот код для мгновенной настройки синхронизации.
             </p>
-            
             <button 
               onClick={() => setShowQRModal(false)}
-              className="w-full mt-8 bg-slate-900 text-white font-black py-5 rounded-3xl text-[10px] uppercase tracking-widest active:scale-95 transition-all"
+              className="w-full mt-8 bg-slate-900 text-slate-100 font-black py-5 rounded-3xl text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-xl"
             >
               Закрыть
             </button>

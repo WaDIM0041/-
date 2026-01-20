@@ -94,7 +94,6 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
       const analysis = await analyzeConstructionTask(task.title, task.description, task.evidenceUrls);
       const updatedTask = { ...task, aiAnalysis: analysis };
       if (onUpdateTask) onUpdateTask(updatedTask);
-      
       onAddComment(task.id, `🤖 ЗОДЧИЙ AI: Результат проверки - ${analysis.status.toUpperCase()}. ${analysis.feedback}`);
     } catch (error) {
       console.error("AI Audit failed", error);
@@ -115,8 +114,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
   const canPerformSupervisorActions = isAdmin || role === UserRole.SUPERVISOR;
 
   return (
-    <div className="animate-in slide-in-from-right-4 duration-300 bg-white min-h-full rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-6 shadow-sm border border-slate-100 pb-20 sm:pb-12 overflow-x-hidden">
-      {/* Photo Preview Overlay */}
+    <div className="animate-in slide-in-from-right-4 duration-300 bg-white min-h-full rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-6 shadow-sm border border-slate-100 pb-20 sm:pb-12 overflow-x-hidden text-left">
       {previewImage && (
         <FilePreviewer 
           url={previewImage.url} 
@@ -152,7 +150,6 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
         <p className="text-slate-600 text-sm sm:text-base font-medium leading-relaxed">{task.description}</p>
       </div>
 
-      {/* AI Analysis Summary */}
       {task.aiAnalysis && (
         <div className={`mb-8 sm:mb-10 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border-2 animate-in slide-in-from-top-4 ${
           task.aiAnalysis.status === 'passed' ? 'bg-emerald-50/50 border-emerald-100' : 
@@ -160,7 +157,6 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
           'bg-rose-50/50 border-rose-100'
         }`}>
           <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-            {/* Merged multiple className attributes into one */}
             <Sparkles className={`${task.aiAnalysis.status === 'passed' ? 'text-emerald-500' : task.aiAnalysis.status === 'warning' ? 'text-amber-500' : 'text-rose-500'} sm:w-6 sm:h-6`} size={20} />
             <h4 className="text-[10px] sm:text-sm font-black uppercase tracking-widest">Анализ ЗОДЧИЙ AI</h4>
           </div>
@@ -179,7 +175,6 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
       )}
 
       <div className="grid grid-cols-1 gap-8 sm:gap-10">
-        {/* ФОТООТЧЕТЫ */}
         <div className="space-y-4 sm:space-y-5">
           <div className="flex items-center justify-between px-1">
             <h4 className="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase flex items-center gap-2 sm:gap-3"><Files size={16} className="sm:w-4.5 sm:h-4.5" /> Фотоотчеты</h4>
@@ -188,7 +183,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
                 <button 
                   onClick={runAIAudit}
                   disabled={isAIAnalyzing}
-                  className="text-white flex items-center gap-1.5 sm:gap-2 text-[8px] sm:text-[10px] font-black uppercase tracking-widest bg-slate-800 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl border border-slate-700 active:scale-95 disabled:opacity-50"
+                  className="text-slate-100 flex items-center gap-1.5 sm:gap-2 text-[8px] sm:text-[10px] font-black uppercase tracking-widest bg-slate-800 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl border border-slate-700 active:scale-95 disabled:opacity-50 transition-all shadow-md"
                 >
                   {isAIAnalyzing ? <Sparkles size={14} className="animate-spin" /> : <Sparkles size={14} />}
                   <span className="hidden xs:inline">{isAIAnalyzing ? '...' : 'Аудит'}</span>
@@ -199,7 +194,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
                   <input type="file" ref={evidenceInputRef} className="hidden" accept="image/*" capture="environment" onChange={handleAddEvidenceFile} />
                   <button 
                     onClick={() => evidenceInputRef.current?.click()}
-                    className="text-blue-600 flex items-center gap-1.5 sm:gap-2 text-[8px] sm:text-[10px] font-black uppercase tracking-widest bg-blue-50 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl border border-blue-100 active:scale-95"
+                    className="text-blue-600 flex items-center gap-1.5 sm:gap-2 text-[8px] sm:text-[10px] font-black uppercase tracking-widest bg-blue-50 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl border border-blue-100 active:scale-95 transition-all"
                   >
                     <ImagePlus size={14} /> Добавить
                   </button>
@@ -207,7 +202,6 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
               )}
             </div>
           </div>
-          
           <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-2 gap-3 sm:gap-4">
             {task.evidenceUrls.length === 0 ? (
               <div className="col-span-full py-12 sm:py-16 bg-slate-50 rounded-2xl sm:rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-2 sm:gap-3 text-slate-300">
@@ -222,14 +216,13 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
                   className="aspect-square bg-slate-100 rounded-xl sm:rounded-[1.5rem] overflow-hidden border border-slate-100 shadow-sm relative group active:scale-95 transition-all cursor-pointer"
                 >
                   <img src={url} alt={`Evidence ${i}`} className="w-full h-full object-cover" />
-                  <div className="absolute top-1.5 right-1.5 bg-black/40 text-white px-1.5 py-0.5 rounded-md text-[8px] font-black">#{i+1}</div>
+                  <div className="absolute top-1.5 right-1.5 bg-black/40 text-slate-100 px-1.5 py-0.5 rounded-md text-[8px] font-black">#{i+1}</div>
                 </div>
               ))
             )}
           </div>
         </div>
 
-        {/* ЧАТ / КОММЕНТАРИИ */}
         <div className="space-y-4 sm:space-y-5">
           <h4 className="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase flex items-center gap-2 sm:gap-3 px-1"><MessageSquare size={16} className="sm:w-4.5 sm:h-4.5" /> История</h4>
           <div className="bg-slate-50 rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 min-h-[180px] max-h-[350px] overflow-y-auto flex flex-col gap-4 shadow-inner scrollbar-hide">
@@ -240,11 +233,11 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
               </div>
             ) : (
               task.comments?.map((c) => (
-                <div key={c.id} className={`flex flex-col ${c.author === role ? 'items-end' : 'items-start'}`}>
-                  <div className={`max-w-[95%] p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm border ${c.author === role ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-800 border-slate-100'}`}>
+                <div key={c.id} className={`flex flex-col ${c.role === role ? 'items-end' : 'items-start'}`}>
+                  <div className={`max-w-[95%] p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm border ${c.role === role ? 'bg-blue-600 text-slate-100 border-blue-600' : 'bg-white text-slate-800 border-slate-100'}`}>
                     <div className="flex justify-between items-center gap-3 sm:gap-5 mb-1 sm:mb-2">
-                      <span className={`text-[7px] sm:text-[8px] font-black uppercase tracking-widest ${c.author === role ? 'text-blue-100' : 'text-blue-600'}`}>{c.author}</span>
-                      <span className={`text-[7px] sm:text-[8px] font-bold uppercase ${c.author === role ? 'text-white/60' : 'text-slate-300'}`}>{new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className={`text-[7px] sm:text-[8px] font-black uppercase tracking-widest ${c.role === role ? 'text-blue-100' : 'text-blue-600'}`}>{c.author}</span>
+                      <span className={`text-[7px] sm:text-[8px] font-bold uppercase ${c.role === role ? 'text-slate-100/60' : 'text-slate-300'}`}>{new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     <p className="text-xs sm:text-sm font-bold leading-relaxed">{c.text}</p>
                   </div>
@@ -260,33 +253,31 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
               onChange={(e) => setNewCommentText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendComment()}
               placeholder="Текст..." 
-              className="flex-1 bg-transparent px-3 sm:px-5 py-3 sm:py-4 text-sm sm:text-base font-bold text-slate-700 outline-none"
+              className="flex-1 bg-transparent px-3 sm:px-5 py-3 sm:py-4 text-sm sm:text-base font-bold text-slate-900 placeholder:text-slate-400 outline-none"
             />
-            <button onClick={handleSendComment} className="bg-blue-600 text-white p-3 sm:p-4 rounded-lg sm:rounded-2xl shadow-lg active:scale-90 transition-all shrink-0">
+            <button onClick={handleSendComment} className="bg-blue-600 text-slate-100 p-3 sm:p-4 rounded-lg sm:rounded-2xl shadow-lg active:scale-90 transition-all shrink-0">
               <SendHorizontal size={20} className="sm:w-6 sm:h-6" />
             </button>
           </div>
         </div>
 
-        {/* УПРАВЛЕНИЕ */}
         <div className="border-t border-slate-100 pt-8 pb-4">
           {canPerformForemanActions && (
             <>
               {task.status === TaskStatus.TODO && (
                 <button 
                   onClick={() => onStatusChange(task.id, TaskStatus.IN_PROGRESS)}
-                  className="w-full flex items-center justify-center gap-3 bg-blue-600 text-white font-black py-4 sm:py-6 rounded-2xl transition-all shadow-xl shadow-blue-100 active:scale-[0.98] text-sm sm:text-base uppercase tracking-widest"
+                  className="w-full flex items-center justify-center gap-3 bg-blue-600 text-slate-100 font-black py-4 sm:py-6 rounded-2xl transition-all shadow-xl shadow-blue-100 active:scale-[0.98] text-sm sm:text-base uppercase tracking-widest"
                 >
                   <Play size={20} fill="currentColor" /> Начать
                 </button>
               )}
-
               {(task.status === TaskStatus.IN_PROGRESS || task.status === TaskStatus.REWORK) && (
                 <div className="space-y-3">
                   <input type="file" ref={fileInputRef} className="hidden" accept="image/*" capture="environment" onChange={handleStatusChangeWithFile} />
                   <button 
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full flex items-center justify-center gap-3 bg-emerald-600 text-white font-black py-4 sm:py-6 rounded-2xl transition-all shadow-xl shadow-emerald-100 active:scale-[0.98] text-sm sm:text-base uppercase tracking-widest"
+                    className="w-full flex items-center justify-center gap-3 bg-emerald-600 text-slate-100 font-black py-4 sm:py-6 rounded-2xl transition-all shadow-xl shadow-emerald-100 active:scale-[0.98] text-sm sm:text-base uppercase tracking-widest"
                   >
                     <Camera size={24} /> Сдать работу
                   </button>
@@ -307,7 +298,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
                   </button>
                   <button 
                     onClick={() => onStatusChange(task.id, TaskStatus.DONE)}
-                    className="flex items-center justify-center gap-2 bg-emerald-600 text-white font-black py-4 rounded-2xl shadow-xl active:scale-[0.98] transition-all text-[10px] sm:text-sm uppercase tracking-widest"
+                    className="flex items-center justify-center gap-2 bg-emerald-600 text-slate-100 font-black py-4 rounded-2xl shadow-xl active:scale-[0.98] transition-all text-[10px] sm:text-sm uppercase tracking-widest"
                   >
                     <Check size={20} /> Принять
                   </button>
@@ -325,15 +316,15 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
                   <textarea 
                     value={reworkComment}
                     onChange={(e) => setReworkComment(e.target.value)}
-                    placeholder="Описание..."
-                    className="w-full p-4 border border-rose-100 rounded-xl text-sm font-bold text-slate-700 min-h-[120px] outline-none transition-all shadow-inner"
+                    placeholder="Описание недочетов..."
+                    className="w-full p-4 border border-rose-100 rounded-xl text-sm font-bold text-slate-900 placeholder:text-slate-400 min-h-[120px] outline-none transition-all shadow-inner"
                   />
                   <div className="flex gap-2">
                     <button onClick={() => setShowReworkInput(false)} className="flex-1 bg-white text-slate-400 py-4 rounded-xl text-[9px] font-black uppercase border border-slate-100">Отмена</button>
                     <button 
                       onClick={() => onStatusChange(task.id, TaskStatus.REWORK, undefined, reworkComment)}
                       disabled={!reworkComment.trim()}
-                      className="flex-[2] bg-rose-600 text-white py-4 rounded-xl text-[9px] font-black uppercase shadow-lg shadow-rose-100 disabled:opacity-50 active:scale-95 transition-all"
+                      className="flex-[2] bg-rose-600 text-slate-100 py-4 rounded-xl text-[9px] font-black uppercase shadow-lg shadow-rose-100 disabled:opacity-50 active:scale-95 transition-all"
                     >
                       Вернуть
                     </button>

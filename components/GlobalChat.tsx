@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { GlobalChatMessage, User, UserRole } from '../types.ts';
 import { SendHorizontal, MessageSquare, Shield, Activity, Users, Eye } from 'lucide-react';
@@ -48,7 +49,7 @@ export const GlobalChat: React.FC<GlobalChatProps> = ({ messages, currentUser, c
       <div className="p-4 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
         <div className="flex items-center gap-3">
           <MessageSquare size={20} className="text-blue-600" />
-          <h3 className="text-sm font-black uppercase tracking-widest">Общий чат команды</h3>
+          <h3 className="text-sm font-black uppercase tracking-widest text-slate-800">Общий чат команды</h3>
         </div>
         <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{messages.length} сообщений</span>
       </div>
@@ -62,16 +63,16 @@ export const GlobalChat: React.FC<GlobalChatProps> = ({ messages, currentUser, c
         ) : (
           messages.map((msg) => (
             <div key={msg.id} className={`flex flex-col ${msg.userId === currentUser.id ? 'items-end' : 'items-start'}`}>
-              <div className={`max-w-[85%] rounded-2xl p-4 ${msg.userId === currentUser.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'bg-slate-50 text-slate-800 border border-slate-100'}`}>
+              <div className={`max-w-[85%] rounded-2xl p-4 ${msg.userId === currentUser.id ? 'bg-blue-600 text-slate-100 shadow-lg shadow-blue-100' : 'bg-slate-50 text-slate-800 border border-slate-100'}`}>
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded flex items-center gap-1 ${msg.userId === currentUser.id ? 'text-blue-100 bg-white/10' : getRoleColor(msg.role)}`}>
                     {getRoleIcon(msg.role)} {msg.username}
                   </span>
-                  <span className={`text-[7px] font-bold ${msg.userId === currentUser.id ? 'text-white/60' : 'text-slate-400'}`}>
+                  <span className={`text-[7px] font-bold ${msg.userId === currentUser.id ? 'text-slate-100/60' : 'text-slate-400'}`}>
                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
-                <p className="text-xs font-bold leading-relaxed">{msg.text}</p>
+                <p className="text-xs font-bold leading-relaxed text-left">{msg.text}</p>
               </div>
             </div>
           ))
@@ -85,9 +86,9 @@ export const GlobalChat: React.FC<GlobalChatProps> = ({ messages, currentUser, c
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
           placeholder="Сообщение всем..." 
-          className="flex-1 bg-slate-50 px-4 py-3 rounded-xl text-sm font-bold outline-none border border-slate-100 focus:ring-4 focus:ring-blue-50 transition-all"
+          className="flex-1 bg-slate-50 px-4 py-3 rounded-xl text-sm font-bold text-slate-900 placeholder:text-slate-400 outline-none border border-slate-100 focus:ring-4 focus:ring-blue-50 transition-all shadow-inner"
         />
-        <button onClick={handleSend} className="bg-blue-600 text-white p-3 rounded-xl shadow-lg shadow-blue-100 active:scale-95 transition-all">
+        <button onClick={handleSend} className="bg-blue-600 text-slate-100 p-3 rounded-xl shadow-lg shadow-blue-100 active:scale-95 transition-all">
           <SendHorizontal size={20} />
         </button>
       </div>
