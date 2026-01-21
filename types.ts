@@ -1,5 +1,5 @@
 
-export const APP_VERSION = '1.1.2';
+export const APP_VERSION = '1.1.5';
 export const STANDARD_NAME = 'Zodchiy Standard baseline';
 
 export enum UserRole {
@@ -124,7 +124,7 @@ export interface GlobalChatMessage {
 
 export interface AppNotification {
   id: number;
-  type: 'review' | 'rework' | 'done';
+  type: 'review' | 'rework' | 'done' | 'message';
   projectTitle: string;
   taskTitle: string;
   message: string;

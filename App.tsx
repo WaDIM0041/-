@@ -117,7 +117,7 @@ const App: React.FC = () => {
   const [notifications, setNotifications] = useState<AppNotification[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
     return saved ? JSON.parse(saved) : [
-      { id: 1, type: 'review', projectTitle: 'Елизово-Холл', taskTitle: 'Армирование фундамента', message: 'Добро пожаловать в v1.1.2!', targetRole: UserRole.ADMIN, isRead: false, createdAt: new Date().toISOString() }
+      { id: 1, type: 'review', projectTitle: 'Елизово-Холл', taskTitle: 'Система', message: `Успешное обновление до версии v${APP_VERSION}!`, targetRole: UserRole.ADMIN, isRead: false, createdAt: new Date().toISOString() }
     ];
   });
 
@@ -136,14 +136,14 @@ const App: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // ГАРАНТИЯ ОТКРЫТИЯ ЗАДАЧИ
+  // ГАРАНТИЯ ОТКРЫТИЯ ЗАДАЧИ - Высокий приоритет в логике отображения
   const activeTask = useMemo(() => {
-    if (!selectedTaskId) return null;
-    return tasks.find(t => Number(t.id) === Number(selectedTaskId));
+    if (selectedTaskId === null) return null;
+    return tasks.find(t => Number(t.id) === Number(selectedTaskId)) || null;
   }, [tasks, selectedTaskId]);
 
   useEffect(() => {
-    if (selectedTaskId) {
+    if (selectedTaskId !== null) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [selectedTaskId]);
@@ -245,7 +245,7 @@ const App: React.FC = () => {
             <div className="flex flex-col text-left">
               <h1 className="font-black text-lg tracking-tighter uppercase leading-none text-slate-900">ЗОДЧИЙ</h1>
               <div className="flex items-center gap-2 mt-1">
-                <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest leading-none">v{APP_VERSION}</p>
+                <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest leading-none italic">v{APP_VERSION}</p>
                 {isOnline ? <Wifi size={10} className="text-emerald-500" /> : <WifiOff size={10} className="text-rose-500" />}
               </div>
             </div>
@@ -255,6 +255,7 @@ const App: React.FC = () => {
             <button 
               onClick={() => setShowNotifications(!showNotifications)} 
               className={`relative p-2.5 rounded-xl transition-all ${showNotifications ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+              aria-label="Уведомления"
             >
               <Bell size={20} className={unreadCount > 0 ? 'animate-bounce' : ''} />
               {unreadCount > 0 && (
@@ -270,8 +271,8 @@ const App: React.FC = () => {
       </header>
 
       <main className="flex-1 p-4 sm:p-6 overflow-x-hidden text-slate-900">
-        {/* КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: ПРИОРИТЕТ ЗАДАЧИ */}
-        {selectedTaskId && activeTask ? (
+        {/* ОТРИСОВКА ЗАДАЧИ: ПЕРВООЧЕРЕДНОЙ ПРИОРИТЕТ */}
+        {selectedTaskId !== null && activeTask ? (
           <TaskDetails 
             task={activeTask} 
             role={activeRole} 
@@ -321,8 +322,8 @@ const App: React.FC = () => {
                {tasks.map(t => (
                  <div key={t.id} onClick={() => { setSelectedProjectId(t.projectId); setSelectedTaskId(t.id); }} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between cursor-pointer group active:scale-[0.98] transition-all">
                     <div className="truncate">
-                      <h4 className="font-black text-slate-900 text-sm truncate">{t.title}</h4>
-                      <p className="text-[9px] font-black uppercase text-blue-600 mt-1 italic">Объект: {projects.find(p => p.id === t.projectId)?.name}</p>
+                      <h4 className="font-black text-slate-900 text-sm truncate uppercase">{t.title}</h4>
+                      <p className="text-[9px] font-black uppercase text-blue-600 mt-1 italic">Объект: {projects.find(p => p.id === t.projectId)?.name || 'Неизвестен'}</p>
                     </div>
                     <ChevronRight size={18} className="text-slate-200 group-hover:text-blue-600 transition-all" />
                  </div>
@@ -333,17 +334,122 @@ const App: React.FC = () => {
           <AdminPanel users={users} onUpdateUsers={setUsers} currentUser={currentUser!} activeRole={activeRole} onRoleSwitch={setActiveRole} />
         ) : activeTab === 'backup' ? (
           <BackupManager currentUser={currentUser} onDataImport={(d) => { if(d.projects) setProjects(d.projects); if(d.tasks) setTasks(d.tasks); if(d.users) setUsers(d.users); }} />
-        ) : activeTab === 'profile' ? (
-          <div className="space-y-6">
-            <div className="bg-white rounded-3xl p-6 text-center space-y-6 shadow-sm border border-slate-100">
-              <div className="w-20 h-20 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-[2rem] flex items-center justify-center mx-auto text-2xl font-black shadow-xl border-4 border-white">{currentUser?.username[0].toUpperCase()}</div>
-              <div>
-                <h3 className="text-xl font-black text-slate-900 tracking-tight">{currentUser?.username}</h3>
-                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1">{ROLE_LABELS[activeRole]}</p>
+        ) : (
+          <div className="space-y-6 animate-in fade-in">
+            {activeTab === 'profile' ? (
+               <div className="space-y-6">
+                <div className="bg-white rounded-3xl p-6 text-center space-y-6 shadow-sm border border-slate-100">
+                  <div className="w-20 h-20 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-[2rem] flex items-center justify-center mx-auto text-2xl font-black shadow-xl border-4 border-white">{currentUser?.username[0].toUpperCase()}</div>
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight">{currentUser?.username}</h3>
+                    <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1">{ROLE_LABELS[activeRole]}</p>
+                  </div>
+                  <button onClick={() => { setCurrentUser(null); localStorage.removeItem(STORAGE_KEYS.AUTH_USER); }} className="w-full bg-slate-50 text-slate-500 font-black py-5 rounded-2xl uppercase text-[10px] flex items-center justify-center gap-3 transition-all active:scale-95 border border-slate-100"><LogOut size={18} /> Выйти</button>
+                </div>
+                <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm text-left">
+                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Системные настройки</h4>
+                   <button onClick={() => performSync()} className="w-full bg-blue-50 text-blue-600 font-black py-5 rounded-2xl uppercase text-[10px] flex items-center justify-center gap-3 active:scale-95 border border-blue-100 mb-3"><RefreshCw size={18} className={isSyncing ? 'animate-spin' : ''} /> Синхронизировать</button>
+                   <p className="text-[8px] text-center text-slate-400 uppercase mt-2">Версия ПО: {APP_VERSION}</p>
+                </div>
               </div>
-              <button onClick={() => { setCurrentUser(null); localStorage.removeItem(STORAGE_KEYS.AUTH_USER); }} className="w-full bg-slate-50 text-slate-500 font-black py-5 rounded-2xl uppercase text-[10px] flex items-center justify-center gap-3 transition-all active:scale-95 border border-slate-100"><LogOut size={18} /> Выйти</button>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xs font-black text-slate-500 uppercase tracking-widest text-left">Объекты ({projects.length})</h2>
+                  {(activeRole === UserRole.ADMIN || activeRole === UserRole.MANAGER) && (
+                    <button onClick={() => { setProjectEditMode(false); setProjectEditForm({}); setShowProjectForm(true); }} className="bg-blue-600 text-white p-2.5 rounded-xl shadow-lg active:scale-90 transition-all">
+                      <Plus size={20} />
+                    </button>
+                  )}
+                </div>
+                <div className="grid gap-3 text-left">
+                  {projects.map(p => (
+                    <div key={p.id} onClick={() => setSelectedProjectId(p.id)} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between cursor-pointer active:scale-[0.98] transition-all group">
+                      <div className="flex items-center gap-4 truncate">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                          <MapPin size={20} />
+                        </div>
+                        <div className="truncate">
+                          <h4 className="font-black text-slate-900 text-sm truncate uppercase">{p.name}</h4>
+                          <p className="text-[9px] font-bold text-slate-500 uppercase truncate">{p.address}</p>
+                        </div>
+                      </div>
+                      <ChevronRight size={20} className="text-slate-200 shrink-0" />
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </main>
+
+      {/* ФОРМЫ */}
+      {showProjectForm && (
+        <div className="fixed inset-0 z-[120] bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in">
+          <form onSubmit={handleSaveProject} className="bg-white w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10 border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-slate-50 flex items-center justify-between sticky top-0 bg-white z-10">
+              <h3 className="text-sm font-black uppercase tracking-widest text-slate-800">{projectEditMode ? 'Редактировать объект' : 'Новый объект'}</h3>
+              <button type="button" onClick={() => setShowProjectForm(false)} className="p-2 text-slate-400 hover:text-slate-900 transition-colors"><X size={24} /></button>
             </div>
-            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm text-left">
-               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Системные настройки</h4>
-               <button onClick={() => performSync()} className="w-full bg-blue-50 text-blue-600 font-black py-5 rounded-2xl uppercase text-[10px] flex items-center justify-center gap-3 active:scale-95 border border-blue-100 mb-3"><RefreshCw size={18} className={isSyncing ? 'animate-spin' : ''} /> Синхронизировать</button>
-               <button onClick={() => { if(
+            <div className="p-6 space-y-4 text-left">
+              <div className="space-y-1"><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Название объекта</label><input required value={projectEditForm.name || ''} onChange={e => setProjectEditForm({...projectEditForm, name: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-slate-900" placeholder="Название"/></div>
+              <div className="space-y-1"><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Адрес объекта</label><input required value={projectEditForm.address || ''} onChange={e => setProjectEditForm({...projectEditForm, address: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-slate-900" placeholder="г. Камчатка..."/></div>
+            </div>
+            <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
+              <button type="submit" className="flex-1 bg-blue-600 text-white font-black py-4 rounded-2xl uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 shadow-xl active:scale-[0.98] transition-all"><Save size={18} /> Сохранить объект</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {showTaskForm && (
+        <div className="fixed inset-0 z-[120] bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in">
+          <form onSubmit={handleSaveTask} className="bg-white w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10 border border-slate-100">
+            <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-white z-10">
+              <h3 className="text-sm font-black uppercase tracking-widest text-slate-800">Добавить задачу</h3>
+              <button type="button" onClick={() => setShowTaskForm(false)} className="p-2 text-slate-400 hover:text-slate-900 transition-colors"><X size={24} /></button>
+            </div>
+            <div className="p-6 space-y-4 text-left">
+              <div className="space-y-1"><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Название задачи</label><input required value={taskEditForm.title || ''} onChange={e => setTaskEditForm({...taskEditForm, title: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-slate-900" placeholder="Например: Монтаж..."/></div>
+              <div className="space-y-1"><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Техническое задание</label><textarea required value={taskEditForm.description || ''} onChange={e => setTaskEditForm({...taskEditForm, description: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-slate-900 min-h-[120px]" placeholder="Детали выполнения..."/></div>
+            </div>
+            <div className="p-6 bg-slate-50 border-t border-slate-100">
+              <button type="submit" className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 active:scale-[0.98] transition-all shadow-xl shadow-blue-100">
+                <FilePlus size={18} /> Создать задачу
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-2xl border-t border-slate-100 z-[70] w-full max-w-2xl mx-auto rounded-t-3xl shadow-2xl safe-area-bottom">
+        <div className="flex justify-around items-center py-4 px-2">
+          <button onClick={() => { setActiveTab('dashboard'); setSelectedProjectId(null); setSelectedTaskId(null); }} className={`flex flex-col items-center gap-1 flex-1 ${activeTab === 'dashboard' ? 'text-blue-600' : 'text-slate-400'}`}>
+            <LayoutGrid size={22} /><span className="text-[7px] font-black uppercase">Объекты</span>
+          </button>
+          <button onClick={() => { setActiveTab('tasks'); setSelectedProjectId(null); setSelectedTaskId(null); }} className={`flex flex-col items-center gap-1 flex-1 ${activeTab === 'tasks' ? 'text-blue-600' : 'text-slate-400'}`}>
+            <CheckSquare size={22} /><span className="text-[7px] font-black uppercase">Задачи</span>
+          </button>
+          {activeRole === UserRole.ADMIN && (
+            <>
+              <button onClick={() => { setActiveTab('admin'); setSelectedProjectId(null); setSelectedTaskId(null); }} className={`flex flex-col items-center gap-1 flex-1 ${activeTab === 'admin' ? 'text-blue-600' : 'text-slate-400'}`}>
+                <Users size={22} /><span className="text-[7px] font-black uppercase">Команда</span>
+              </button>
+              <button onClick={() => { setActiveTab('backup'); setSelectedProjectId(null); setSelectedTaskId(null); }} className={`flex flex-col items-center gap-1 flex-1 ${activeTab === 'backup' ? 'text-blue-600' : 'text-slate-400'}`}>
+                <Cloud size={22} /><span className="text-[7px] font-black uppercase">Облако</span>
+              </button>
+            </>
+          )}
+          <button onClick={() => { setActiveTab('profile'); setSelectedProjectId(null); setSelectedTaskId(null); }} className={`flex flex-col items-center gap-1 flex-1 ${activeTab === 'profile' ? 'text-blue-600' : 'text-slate-400'}`}>
+            <UserCircle size={22} /><span className="text-[7px] font-black uppercase">Профиль</span>
+          </button>
+        </div>
+      </nav>
+
+      <AIAssistant projectContext={currentProject ? `Объект: ${currentProject.name}.` : 'Обзор системы.'} />
+    </div>
+  );
+};
+
+export default App;
