@@ -1,5 +1,4 @@
-
-export const APP_VERSION = '1.1.8';
+export const APP_VERSION = '1.1.9';
 export const STANDARD_NAME = 'Zodchiy Standard baseline';
 
 export enum UserRole {
