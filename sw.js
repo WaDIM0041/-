@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'zodchiy-standard-v1.2.0';
+const CACHE_NAME = 'zodchiy-standard-v1.2.1';
 const ASSETS = [
   '/',
   '/index.html',
@@ -11,7 +11,7 @@ const ASSETS = [
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then(c => {
-      console.log('Caching Zodchiy Standard assets v1.2.0');
+      console.log('Caching Zodchiy Standard assets v1.2.1');
       return c.addAll(ASSETS);
     })
   );
@@ -30,6 +30,7 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  // Пропускаем API и GitHub
   if (e.request.url.includes('/api/') || e.request.url.includes('github.com')) return;
   
   e.respondWith(

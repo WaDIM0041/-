@@ -28,7 +28,8 @@ import {
   Trash2,
   Save,
   FilePlus,
-  ArrowUpCircle
+  ArrowUpCircle,
+  AlertCircle
 } from 'lucide-react';
 
 export const STORAGE_KEYS = {
@@ -45,8 +46,8 @@ const INITIAL_PROJECTS: Project[] = [
   {
     id: 1,
     name: 'Объект "Елизово-Холл"',
-    description: 'Строительство загородного дома премиум-класса. Площадь 250м2.',
-    clientFullName: 'Александров Александр Александрович',
+    description: 'Строительство загородного дома премиум-класса.',
+    clientFullName: 'Александров А.А.',
     city: 'Елизово',
     street: 'Магистральная, 42',
     phone: '+7 900 123-45-67',
@@ -57,22 +58,6 @@ const INITIAL_PROJECTS: Project[] = [
     progress: 45,
     status: ProjectStatus.IN_PROGRESS,
     comments: [],
-    updatedAt: new Date().toISOString()
-  }
-];
-
-const INITIAL_TASKS: Task[] = [
-  {
-    id: 101,
-    projectId: 1,
-    title: 'Армирование фундамента',
-    description: 'Вязка арматуры по проекту КЖ-1. Проверка шага ячейки 200х200.',
-    status: TaskStatus.DONE,
-    evidenceUrls: ['https://images.unsplash.com/photo-1590059393043-da5357876356?auto=format&fit=crop&q=80&w=600'],
-    evidenceCount: 1,
-    comments: [
-      { id: 1, author: 'Технадзор', role: UserRole.SUPERVISOR, text: 'Армирование выполнено качественно. Замечаний нет.', createdAt: new Date().toISOString() }
-    ],
     updatedAt: new Date().toISOString()
   }
 ];
@@ -97,8 +82,8 @@ const App: React.FC = () => {
     const saved = localStorage.getItem(STORAGE_KEYS.TASKS);
     try { 
       const parsed = saved ? JSON.parse(saved) : null;
-      return (parsed && parsed.length > 0) ? parsed : INITIAL_TASKS;
-    } catch { return INITIAL_TASKS; }
+      return (parsed && parsed.length > 0) ? parsed : [];
+    } catch { return []; }
   });
 
   const [users, setUsers] = useState<User[]>(() => {
@@ -108,16 +93,16 @@ const App: React.FC = () => {
     }
     return [
       { id: 1, username: 'Администратор', role: UserRole.ADMIN },
-      { id: 2, username: 'Менеджер Объектов', role: UserRole.MANAGER },
-      { id: 3, username: 'Главный Прораб', role: UserRole.FOREMAN },
-      { id: 4, username: 'Технический Надзор', role: UserRole.SUPERVISOR }
+      { id: 2, username: 'Менеджер', role: UserRole.MANAGER },
+      { id: 3, username: 'Прораб', role: UserRole.FOREMAN },
+      { id: 4, username: 'Технадзор', role: UserRole.SUPERVISOR }
     ];
   });
 
   const [notifications, setNotifications] = useState<AppNotification[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
     return saved ? JSON.parse(saved) : [
-      { id: 1, type: 'review', projectTitle: 'Елизово-Холл', taskTitle: 'Система', message: `Успешное обновление до версии v${APP_VERSION}!`, targetRole: UserRole.ADMIN, isRead: false, createdAt: new Date().toISOString() }
+      { id: 1, type: 'info', projectTitle: 'Система', taskTitle: 'Обновление', message: `Успешное обновление до v${APP_VERSION}`, targetRole: UserRole.ADMIN, isRead: false, createdAt: new Date().toISOString() }
     ];
   });
 
@@ -136,25 +121,54 @@ const App: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // ГАРАНТИЯ ОТКРЫТИЯ ЗАДАЧИ - Высокий приоритет в логике отображения
-  const activeTask = useMemo(() => {
-    if (selectedTaskId === null) return null;
-    return tasks.find(t => Number(t.id) === Number(selectedTaskId)) || null;
-  }, [tasks, selectedTaskId]);
+  const performSync = useCallback(async () => {
+    if (!navigator.onLine) {
+      alert("Нет подключения к сети для обновления");
+      return;
+    }
+    setIsSyncing(true);
+    
+    try {
+      // 1. Проверяем наличие обновлений Service Worker
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (registration) {
+          await registration.update();
+          console.log("Service Worker update checked");
+        }
+      }
+
+      // 2. Синхронизация с API
+      const response = await fetch('/api/sync');
+      if (response.ok) {
+        const serverData = await response.json();
+        if (serverData.appVersion !== APP_VERSION) {
+          console.log(`New version found: ${serverData.appVersion}. Refreshing...`);
+          if (confirm(`Найдена новая версия ПО: ${serverData.appVersion}. Обновить сейчас?`)) {
+            window.location.reload();
+          }
+        }
+      }
+      
+      localStorage.setItem(STORAGE_KEYS.LAST_SYNC, Date.now().toString());
+      alert("✅ Синхронизация завершена. Приложение актуально.");
+    } catch (e) {
+      console.error("Sync failed", e);
+      alert("❌ Ошибка синхронизации. Проверьте сеть.");
+    } finally {
+      setIsSyncing(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (selectedTaskId !== null) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [selectedTaskId]);
-
-  const performSync = useCallback(async () => {
-    if (!navigator.onLine) return;
-    setIsSyncing(true);
-    try {
-      await new Promise(r => setTimeout(r, 600));
-      localStorage.setItem(STORAGE_KEYS.LAST_SYNC, Date.now().toString());
-    } catch (e) { console.error("Sync failed", e); } finally { setIsSyncing(false); }
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   useEffect(() => {
@@ -174,7 +188,7 @@ const App: React.FC = () => {
     localStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(user));
   };
 
-  const addNotification = (type: any, projTitle: string, taskTitle: string, msg: string, role: UserRole) => {
+  const addNotification = (type: string, projTitle: string, taskTitle: string, msg: string, role: UserRole) => {
     const newNotif: AppNotification = {
       id: Date.now(),
       type,
@@ -188,39 +202,9 @@ const App: React.FC = () => {
     setNotifications(prev => [newNotif, ...prev]);
   };
 
-  const handleSaveProject = (e: React.FormEvent) => {
-    e.preventDefault();
-    const now = new Date().toISOString();
-    if (projectEditMode && projectEditForm.id) {
-      setProjects(projects.map(p => p.id === projectEditForm.id ? { ...p, ...projectEditForm, updatedAt: now } as Project : p));
-    } else {
-      const newProject: Project = { ...projectEditForm, id: Date.now(), progress: 0, status: ProjectStatus.NEW, fileLinks: [], comments: [], updatedAt: now, geoLocation: { lat: 0, lon: 0 } } as Project;
-      setProjects([...projects, newProject]);
-    }
-    setShowProjectForm(false);
-  };
-
-  const handleSaveTask = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedProjectId) return;
-    const newTask: Task = {
-      id: Date.now(),
-      projectId: selectedProjectId,
-      title: taskEditForm.title || 'Новая задача',
-      description: taskEditForm.description || '',
-      status: TaskStatus.TODO,
-      evidenceUrls: [],
-      evidenceCount: 0,
-      comments: [],
-      updatedAt: new Date().toISOString()
-    };
-    setTasks([...tasks, newTask]);
-    setShowTaskForm(false);
-    setTaskEditForm({ title: '', description: '' });
-    addNotification('review', currentProject?.name || 'Объект', newTask.title, 'Добавлена новая задача на объект.', UserRole.FOREMAN);
-  };
-
   if (!currentUser) return <LoginPage users={users} onLogin={handleLogin} />;
+
+  const activeTask = tasks.find(t => t.id === selectedTaskId);
 
   return (
     <div className="min-h-screen pb-24 flex flex-col w-full max-w-2xl mx-auto bg-slate-50 shadow-sm relative overflow-x-hidden">
@@ -255,23 +239,20 @@ const App: React.FC = () => {
             <button 
               onClick={() => setShowNotifications(!showNotifications)} 
               className={`relative p-2.5 rounded-xl transition-all ${showNotifications ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
-              aria-label="Уведомления"
             >
               <Bell size={20} className={unreadCount > 0 ? 'animate-bounce' : ''} />
               {unreadCount > 0 && (
                 <span className="absolute top-1.5 right-1.5 flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500 border-2 border-white"></span>
                 </span>
               )}
             </button>
-            <span className="text-[9px] font-black uppercase text-blue-600 px-2 py-1.5 bg-blue-50 rounded-lg hidden xs:block">{ROLE_LABELS[activeRole]}</span>
+            <span className="text-[9px] font-black uppercase text-blue-600 px-2 py-1.5 bg-blue-50 rounded-lg">{ROLE_LABELS[activeRole]}</span>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 p-4 sm:p-6 overflow-x-hidden text-slate-900">
-        {/* ОТРИСОВКА ЗАДАЧИ: ПЕРВООЧЕРЕДНОЙ ПРИОРИТЕТ */}
+      <main className="flex-1 p-4 sm:p-6 text-slate-900">
         {selectedTaskId !== null && activeTask ? (
           <TaskDetails 
             task={activeTask} 
@@ -279,9 +260,6 @@ const App: React.FC = () => {
             onClose={() => setSelectedTaskId(null)} 
             onStatusChange={(tid, ns, ev, com) => {
               setTasks(prev => prev.map(t => t.id === tid ? { ...t, status: ns, supervisorComment: com || t.supervisorComment, updatedAt: new Date().toISOString() } : t));
-              if (ns === TaskStatus.REVIEW) addNotification('review', currentProject?.name || 'Объект', activeTask.title, 'Работа сдана на проверку.', UserRole.SUPERVISOR);
-              if (ns === TaskStatus.DONE) addNotification('done', currentProject?.name || 'Объект', activeTask.title, 'Работа принята технадзором.', UserRole.FOREMAN);
-              if (ns === TaskStatus.REWORK) addNotification('rework', currentProject?.name || 'Объект', activeTask.title, 'Требуется доработка по замечаниям.', UserRole.FOREMAN);
             }} 
             onAddComment={(tid, text) => {
               const c: Comment = { id: Date.now(), author: currentUser.username, role: activeRole, text, createdAt: new Date().toISOString() };
@@ -292,7 +270,6 @@ const App: React.FC = () => {
                  setTasks(prev => prev.map(t => t.id === tid ? { ...t, evidenceUrls: [...t.evidenceUrls, r.result as string], evidenceCount: t.evidenceCount + 1, updatedAt: new Date().toISOString() } : t));
                }; r.readAsDataURL(file);
             }}
-            onUpdateTask={(ut) => setTasks(prev => prev.map(t => t.id === ut.id ? { ...ut, updatedAt: new Date().toISOString() } : t))}
           />
         ) : selectedProjectId && currentProject ? (
           <ProjectView 
@@ -308,120 +285,65 @@ const App: React.FC = () => {
               const nc: Comment = { id: Date.now(), author: currentUser.username, role: activeRole, text: t, createdAt: new Date().toISOString() };
               setProjects(prev => prev.map(p => p.id === currentProject.id ? { ...p, comments: [...(p.comments || []), nc], updatedAt: new Date().toISOString() } : p));
             }}
-            onAddFile={(pid, f, cat) => {
-              const r = new FileReader(); r.onloadend = () => {
-                const nf: ProjectFile = { name: f.name, url: r.result as string, category: cat, createdAt: new Date().toISOString() };
-                setProjects(prev => prev.map(p => p.id === pid ? { ...p, fileLinks: [...(p.fileLinks || []), nf], updatedAt: new Date().toISOString() } : p));
-              }; r.readAsDataURL(f);
-            }}
           />
-        ) : activeTab === 'tasks' ? (
-          <div className="space-y-6">
-             <h2 className="text-xs font-black text-slate-500 uppercase tracking-widest text-left">Все задачи ({tasks.length})</h2>
-             <div className="grid gap-3 text-left">
-               {tasks.map(t => (
-                 <div key={t.id} onClick={() => { setSelectedProjectId(t.projectId); setSelectedTaskId(t.id); }} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between cursor-pointer group active:scale-[0.98] transition-all">
-                    <div className="truncate">
-                      <h4 className="font-black text-slate-900 text-sm truncate uppercase">{t.title}</h4>
-                      <p className="text-[9px] font-black uppercase text-blue-600 mt-1 italic">Объект: {projects.find(p => p.id === t.projectId)?.name || 'Неизвестен'}</p>
-                    </div>
-                    <ChevronRight size={18} className="text-slate-200 group-hover:text-blue-600 transition-all" />
-                 </div>
-               ))}
-             </div>
-          </div>
-        ) : activeTab === 'admin' ? (
-          <AdminPanel users={users} onUpdateUsers={setUsers} currentUser={currentUser!} activeRole={activeRole} onRoleSwitch={setActiveRole} />
-        ) : activeTab === 'backup' ? (
-          <BackupManager currentUser={currentUser} onDataImport={(d) => { if(d.projects) setProjects(d.projects); if(d.tasks) setTasks(d.tasks); if(d.users) setUsers(d.users); }} />
-        ) : (
+        ) : activeTab === 'profile' ? (
           <div className="space-y-6 animate-in fade-in">
-            {activeTab === 'profile' ? (
-               <div className="space-y-6">
-                <div className="bg-white rounded-3xl p-6 text-center space-y-6 shadow-sm border border-slate-100">
-                  <div className="w-20 h-20 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-[2rem] flex items-center justify-center mx-auto text-2xl font-black shadow-xl border-4 border-white">{currentUser?.username[0].toUpperCase()}</div>
-                  <div>
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight">{currentUser?.username}</h3>
-                    <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1">{ROLE_LABELS[activeRole]}</p>
-                  </div>
-                  <button onClick={() => { setCurrentUser(null); localStorage.removeItem(STORAGE_KEYS.AUTH_USER); }} className="w-full bg-slate-50 text-slate-500 font-black py-5 rounded-2xl uppercase text-[10px] flex items-center justify-center gap-3 transition-all active:scale-95 border border-slate-100"><LogOut size={18} /> Выйти</button>
-                </div>
-                <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm text-left">
-                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Системные настройки</h4>
-                   <button onClick={() => performSync()} className="w-full bg-blue-50 text-blue-600 font-black py-5 rounded-2xl uppercase text-[10px] flex items-center justify-center gap-3 active:scale-95 border border-blue-100 mb-3"><RefreshCw size={18} className={isSyncing ? 'animate-spin' : ''} /> Синхронизировать</button>
-                   <p className="text-[8px] text-center text-slate-400 uppercase mt-2">Версия ПО: {APP_VERSION}</p>
-                </div>
+            <div className="bg-white rounded-3xl p-6 text-center space-y-6 shadow-sm border border-slate-100">
+              <div className="w-20 h-20 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-[2rem] flex items-center justify-center mx-auto text-2xl font-black shadow-xl">
+                {currentUser?.username[0].toUpperCase()}
               </div>
-            ) : (
-              <>
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xs font-black text-slate-500 uppercase tracking-widest text-left">Объекты ({projects.length})</h2>
-                  {(activeRole === UserRole.ADMIN || activeRole === UserRole.MANAGER) && (
-                    <button onClick={() => { setProjectEditMode(false); setProjectEditForm({}); setShowProjectForm(true); }} className="bg-blue-600 text-white p-2.5 rounded-xl shadow-lg active:scale-90 transition-all">
-                      <Plus size={20} />
-                    </button>
-                  )}
-                </div>
-                <div className="grid gap-3 text-left">
-                  {projects.map(p => (
-                    <div key={p.id} onClick={() => setSelectedProjectId(p.id)} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between cursor-pointer active:scale-[0.98] transition-all group">
-                      <div className="flex items-center gap-4 truncate">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                          <MapPin size={20} />
-                        </div>
-                        <div className="truncate">
-                          <h4 className="font-black text-slate-900 text-sm truncate uppercase">{p.name}</h4>
-                          <p className="text-[9px] font-bold text-slate-500 uppercase truncate">{p.address}</p>
-                        </div>
-                      </div>
-                      <ChevronRight size={20} className="text-slate-200 shrink-0" />
+              <div>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">{currentUser?.username}</h3>
+                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1">{ROLE_LABELS[activeRole]}</p>
+              </div>
+              <button onClick={() => { setCurrentUser(null); localStorage.removeItem(STORAGE_KEYS.AUTH_USER); }} className="w-full bg-slate-50 text-slate-500 font-black py-5 rounded-2xl uppercase text-[10px] flex items-center justify-center gap-3 border border-slate-100"><LogOut size={18} /> Выйти</button>
+            </div>
+            
+            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm text-left">
+               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Системные настройки</h4>
+               <button 
+                onClick={performSync} 
+                disabled={isSyncing}
+                className="w-full bg-blue-50 text-blue-600 font-black py-5 rounded-2xl uppercase text-[10px] flex items-center justify-center gap-3 active:scale-95 border border-blue-100 disabled:opacity-50"
+               >
+                 <RefreshCw size={18} className={isSyncing ? 'animate-spin' : ''} /> 
+                 {isSyncing ? 'Проверка...' : 'Синхронизировать ПО'}
+               </button>
+               <div className="mt-6 p-4 bg-slate-50 rounded-xl flex items-center justify-between">
+                 <span className="text-[9px] font-black text-slate-400 uppercase">Версия ПО</span>
+                 <span className="text-[9px] font-black text-blue-600">v{APP_VERSION}</span>
+               </div>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-black text-slate-500 uppercase tracking-widest text-left">Объекты ({projects.length})</h2>
+              {(activeRole === UserRole.ADMIN || activeRole === UserRole.MANAGER) && (
+                <button onClick={() => { setProjectEditMode(false); setProjectEditForm({}); setShowProjectForm(true); }} className="bg-blue-600 text-white p-2.5 rounded-xl shadow-lg">
+                  <Plus size={20} />
+                </button>
+              )}
+            </div>
+            <div className="grid gap-3 text-left">
+              {projects.map(p => (
+                <div key={p.id} onClick={() => setSelectedProjectId(p.id)} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between cursor-pointer active:scale-[0.98] transition-all group">
+                  <div className="flex items-center gap-4 truncate">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                      <MapPin size={20} />
                     </div>
-                  ))}
+                    <div className="truncate">
+                      <h4 className="font-black text-slate-900 text-sm truncate uppercase">{p.name}</h4>
+                      <p className="text-[9px] font-bold text-slate-500 uppercase truncate">{p.address}</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={20} className="text-slate-200 shrink-0" />
                 </div>
-              </>
-            )}
+              ))}
+            </div>
           </div>
         )}
       </main>
-
-      {/* ФОРМЫ */}
-      {showProjectForm && (
-        <div className="fixed inset-0 z-[120] bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in">
-          <form onSubmit={handleSaveProject} className="bg-white w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10 border border-slate-100 max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-50 flex items-center justify-between sticky top-0 bg-white z-10">
-              <h3 className="text-sm font-black uppercase tracking-widest text-slate-800">{projectEditMode ? 'Редактировать объект' : 'Новый объект'}</h3>
-              <button type="button" onClick={() => setShowProjectForm(false)} className="p-2 text-slate-400 hover:text-slate-900 transition-colors"><X size={24} /></button>
-            </div>
-            <div className="p-6 space-y-4 text-left">
-              <div className="space-y-1"><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Название объекта</label><input required value={projectEditForm.name || ''} onChange={e => setProjectEditForm({...projectEditForm, name: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-slate-900" placeholder="Название"/></div>
-              <div className="space-y-1"><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Адрес объекта</label><input required value={projectEditForm.address || ''} onChange={e => setProjectEditForm({...projectEditForm, address: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-slate-900" placeholder="г. Камчатка..."/></div>
-            </div>
-            <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
-              <button type="submit" className="flex-1 bg-blue-600 text-white font-black py-4 rounded-2xl uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 shadow-xl active:scale-[0.98] transition-all"><Save size={18} /> Сохранить объект</button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {showTaskForm && (
-        <div className="fixed inset-0 z-[120] bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-6 animate-in fade-in">
-          <form onSubmit={handleSaveTask} className="bg-white w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10 border border-slate-100">
-            <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-white z-10">
-              <h3 className="text-sm font-black uppercase tracking-widest text-slate-800">Добавить задачу</h3>
-              <button type="button" onClick={() => setShowTaskForm(false)} className="p-2 text-slate-400 hover:text-slate-900 transition-colors"><X size={24} /></button>
-            </div>
-            <div className="p-6 space-y-4 text-left">
-              <div className="space-y-1"><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Название задачи</label><input required value={taskEditForm.title || ''} onChange={e => setTaskEditForm({...taskEditForm, title: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-slate-900" placeholder="Например: Монтаж..."/></div>
-              <div className="space-y-1"><label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Техническое задание</label><textarea required value={taskEditForm.description || ''} onChange={e => setTaskEditForm({...taskEditForm, description: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-slate-900 min-h-[120px]" placeholder="Детали выполнения..."/></div>
-            </div>
-            <div className="p-6 bg-slate-50 border-t border-slate-100">
-              <button type="submit" className="w-full bg-blue-600 text-white font-black py-4 rounded-2xl uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 active:scale-[0.98] transition-all shadow-xl shadow-blue-100">
-                <FilePlus size={18} /> Создать задачу
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
 
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-2xl border-t border-slate-100 z-[70] w-full max-w-2xl mx-auto rounded-t-3xl shadow-2xl safe-area-bottom">
         <div className="flex justify-around items-center py-4 px-2">

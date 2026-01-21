@@ -1,6 +1,5 @@
 
-
-export const APP_VERSION = '1.2.0';
+export const APP_VERSION = '1.2.1';
 export const STANDARD_NAME = 'Zodchiy Standard baseline';
 
 export enum UserRole {
@@ -123,7 +122,6 @@ export interface AppSnapshot {
   config: GithubConfig;
 }
 
-// Fixed missing interface export for AppNotification
 export interface AppNotification {
   id: number;
   type: 'review' | 'done' | 'rework' | string;
@@ -135,7 +133,6 @@ export interface AppNotification {
   createdAt: string;
 }
 
-// Fixed missing interface export for GlobalChatMessage
 export interface GlobalChatMessage {
   id: number;
   userId: number;

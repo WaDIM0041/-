@@ -1,3 +1,4 @@
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -17,7 +18,7 @@ app.add_middleware(
 GLOBAL_DB = {
     "projects": [],
     "tasks": [],
-    "app_version": "1.1.9",
+    "app_version": "1.2.1",
     "last_updated": 0
 }
 
