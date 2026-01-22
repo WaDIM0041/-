@@ -308,6 +308,7 @@ const App: React.FC = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [isAddingProject, setIsAddingProject] = useState(false);
+  const [isEditingProject, setIsEditingProject] = useState(false);
 
   const uploadProjectFile = async (pid: number, file: File, cat: FileCategory) => {
     setSyncStatus('syncing');
@@ -403,19 +404,30 @@ const App: React.FC = () => {
             onUpdateTask={(ut) => handleUpdateDB(prev => ({ ...prev, tasks: prev.tasks.map(t => t.id === ut.id ? { ...ut, updatedAt: new Date().toISOString() } : t) }))}
           />
         ) : selectedProjectId && selectedProject ? (
-          <ProjectView 
-            project={selectedProject} tasks={db.tasks.filter(t => t.projectId === selectedProjectId)} currentUser={currentUser} activeRole={activeRole}
-            onBack={() => setSelectedProjectId(null)}
-            onEdit={(p) => handleUpdateDB(prev => ({ ...prev, projects: prev.projects.map(item => item.id === p.id ? { ...p, updatedAt: new Date().toISOString() } : item) }))}
-            onAddTask={() => {
-              const nid = Date.now();
-              handleUpdateDB(prev => ({ ...prev, tasks: [{ id: nid, projectId: selectedProjectId, title: 'Новая задача', description: 'Описание работ...', status: TaskStatus.TODO, evidenceUrls: [], evidenceCount: 0, comments: [], updatedAt: new Date().toISOString() }, ...prev.tasks] }));
-              setSelectedTaskId(nid);
-            }}
-            onSelectTask={setSelectedTaskId}
-            onSendMessage={(txt) => handleUpdateDB(prev => ({ ...prev, projects: prev.projects.map(p => p.id === selectedProjectId ? { ...p, updatedAt: new Date().toISOString(), comments: [...(p.comments || []), { id: Date.now(), author: currentUser.username, role: activeRole, text: txt, createdAt: new Date().toISOString() }] } : p) }))}
-            onAddFile={uploadProjectFile}
-          />
+          isEditingProject ? (
+            <ProjectForm 
+              project={selectedProject} 
+              onSave={(p) => {
+                handleUpdateDB(prev => ({ ...prev, projects: prev.projects.map(item => item.id === p.id ? { ...p, updatedAt: new Date().toISOString() } : item) }));
+                setIsEditingProject(false);
+              }} 
+              onCancel={() => setIsEditingProject(false)} 
+            />
+          ) : (
+            <ProjectView 
+              project={selectedProject} tasks={db.tasks.filter(t => t.projectId === selectedProjectId)} currentUser={currentUser} activeRole={activeRole}
+              onBack={() => setSelectedProjectId(null)}
+              onEdit={() => setIsEditingProject(true)}
+              onAddTask={() => {
+                const nid = Date.now();
+                handleUpdateDB(prev => ({ ...prev, tasks: [{ id: nid, projectId: selectedProjectId, title: 'Новая задача', description: 'Описание работ...', status: TaskStatus.TODO, evidenceUrls: [], evidenceCount: 0, comments: [], updatedAt: new Date().toISOString() }, ...prev.tasks] }));
+                setSelectedTaskId(nid);
+              }}
+              onSelectTask={setSelectedTaskId}
+              onSendMessage={(txt) => handleUpdateDB(prev => ({ ...prev, projects: prev.projects.map(p => p.id === selectedProjectId ? { ...p, updatedAt: new Date().toISOString(), comments: [...(p.comments || []), { id: Date.now(), author: currentUser.username, role: activeRole, text: txt, createdAt: new Date().toISOString() }] } : p) }))}
+              onAddFile={uploadProjectFile}
+            />
+          )
         ) : isAddingProject ? (
           <ProjectForm project={{} as Project} onSave={(p) => { 
             const nid = Date.now();
@@ -444,7 +456,7 @@ const App: React.FC = () => {
                   ) : db.projects.map(p => (
                     <div key={p.id} onClick={() => setSelectedProjectId(p.id)} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:border-blue-500 hover:shadow-md cursor-pointer transition-all active:scale-[0.98]">
                       <div className="flex gap-4 mb-4">
-                        <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center"><Building2 size={24} /></div>
+                        <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shrink-0"><Building2 size={24} /></div>
                         <div><h3 className="text-base font-black text-slate-800 uppercase leading-tight">{p.name}</h3><p className="text-[10px] font-bold text-slate-400 uppercase mt-1.5">{p.address}</p></div>
                       </div>
                       <div className="flex items-center justify-between pt-4 border-t border-slate-50">
