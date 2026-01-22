@@ -106,11 +106,10 @@ const App: React.FC = () => {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  // Расчет веса базы данных
   const dbSize = useMemo(() => {
     const str = JSON.stringify(db);
     const bytes = new Blob([str]).size;
-    return (bytes / 1024).toFixed(2); // в КБ
+    return (bytes / 1024).toFixed(2);
   }, [db]);
 
   const smartMerge = useCallback((remote: AppSnapshot, local: AppSnapshot): AppSnapshot => {
@@ -212,11 +211,11 @@ const App: React.FC = () => {
         for (const registration of registrations) {
           await registration.update();
         }
-        alert("Проверка обновлений завершена. Приложение будет перезагружено.");
       } catch (e) {
         console.error("SW Update failed", e);
       }
     }
+    // Полная очистка кеша и перезагрузка
     window.location.reload();
   };
 
@@ -302,22 +301,27 @@ const App: React.FC = () => {
     <div className="flex flex-col h-full bg-[#f8fafc] overflow-hidden">
       <header className="bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0 z-40">
         <button onClick={resetToHome} className="flex items-center gap-3 active:scale-95 transition-all text-left group">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100 group-hover:rotate-3 transition-transform">
-            <Building2 size={24} />
+          <div className="w-11 h-11 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100 group-hover:rotate-3 transition-transform">
+            <Building2 size={26} />
           </div>
           <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-black tracking-tighter text-slate-900 leading-none">ЗОДЧИЙ</h1>
-              <div className="h-4 w-px bg-slate-200"></div>
-              <span className="text-[11px] font-black text-slate-800 tracking-tight leading-none uppercase truncate max-w-[120px]">
-                {currentUser.username}
-              </span>
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-black tracking-tighter text-slate-900 leading-none">ЗОДЧИЙ</h1>
+              <div className="h-4 w-0.5 bg-blue-600/20 rounded-full"></div>
+              <div className="flex flex-col">
+                <span className="text-[11px] font-black text-slate-800 leading-none uppercase tracking-tight truncate max-w-[120px]">
+                  {currentUser.username}
+                </span>
+                <span className="text-[8px] font-bold text-blue-600 leading-none uppercase tracking-widest mt-0.5">
+                  {ROLE_LABELS[activeRole]}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 mt-1">
-              <p className="text-[8px] font-black text-blue-600 uppercase tracking-widest leading-none">
-                {ROLE_LABELS[activeRole]}
-              </p>
+            <div className="flex items-center gap-2 mt-1.5">
               <div className={`w-1.5 h-1.5 rounded-full ${isSyncing ? 'bg-blue-500 animate-pulse' : syncError ? 'bg-rose-500' : 'bg-emerald-500'}`}></div>
+              <p className="text-[7px] font-black text-slate-400 uppercase tracking-[0.3em] leading-none">
+                Core v{APP_VERSION}
+              </p>
             </div>
           </div>
         </button>
