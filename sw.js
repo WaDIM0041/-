@@ -1,9 +1,10 @@
-const CACHE_NAME = 'zodchiy-cache-v1.2.8';
+const CACHE_NAME = 'zodchiy-cache-v1.3.2';
 const ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  'https://cdn.tailwindcss.com'
+  'https://cdn.tailwindcss.com',
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap'
 ];
 
 self.addEventListener('install', (e) => {
@@ -23,17 +24,21 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  if (e.request.url.includes('data:image') || e.request.url.includes('blob:')) {
+  if (e.request.url.includes('/api/') || e.request.url.includes('data:') || e.request.url.includes('blob:')) {
     return;
   }
 
-  if (e.request.mode === 'navigate' || ASSETS.includes(e.request.url)) {
-    e.respondWith(
-      caches.match(e.request).then(res => res || fetch(e.request))
-    );
-  } else {
-    e.respondWith(
-      fetch(e.request).catch(() => caches.match(e.request))
-    );
-  }
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      
+      return fetch(e.request).then(response => {
+        if (response.ok && (e.request.url.includes('esm.sh') || e.request.url.includes('cdn.tailwindcss.com'))) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(e.request, copy));
+        }
+        return response;
+      });
+    })
+  );
 });

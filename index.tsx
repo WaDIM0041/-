@@ -4,10 +4,7 @@ import App from './App.tsx';
 
 const mountApp = () => {
   const container = document.getElementById('root');
-  if (!container) {
-    console.error('Mount container not found!');
-    return;
-  }
+  if (!container) return;
 
   try {
     const root = ReactDOM.createRoot(container);
@@ -16,19 +13,17 @@ const mountApp = () => {
         <App />
       </React.StrictMode>
     );
-    console.log('Zodchiy: Successfully mounted');
+    
+    // Мгновенное скрытие заставки после инициализации React
+    if ((window as any).hideAppSplash) {
+        (window as any).hideAppSplash();
+    }
   } catch (err) {
     console.error('Zodchiy: Mount error', err);
-    const globalAny: any = window;
-    if (globalAny.showStartupError) {
-      globalAny.showStartupError(err);
+    if ((window as any).showStartupError) {
+      (window as any).showStartupError(err);
     }
   }
 };
 
-// В современных средах ESM (type="module") код выполняется после парсинга DOM
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', mountApp);
-} else {
-  mountApp();
-}
+mountApp();

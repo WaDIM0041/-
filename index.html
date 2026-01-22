@@ -6,11 +6,16 @@
     <meta name="theme-color" content="#2563eb">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>ЗОДЧИЙ • v1.3.0</title>
+    <title>ЗОДЧИЙ • v1.3.2</title>
     
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/4333/4333645.png">
     
+    <!-- Preload Critical Assets -->
+    <link rel="modulepreload" href="https://esm.sh/react@19.0.0">
+    <link rel="modulepreload" href="https://esm.sh/react-dom@19.0.0">
+    <link rel="modulepreload" href="./App.tsx">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
     
@@ -38,17 +43,20 @@
             background: #f8fafc;
             padding-top: var(--sat);
             padding-bottom: var(--sab);
+            opacity: 0;
+            transition: opacity 0.3s ease-in;
         }
+        #root.mounted { opacity: 1; }
         
         #splash {
             position: fixed; inset: 0; background: #0f172a;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 9999; transition: opacity 0.5s ease-out;
+            z-index: 9999; transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             text-align: center; padding: 20px;
         }
         .loader {
-            width: 48px; height: 48px; border: 5px solid #FFF; border-bottom-color: #2563eb;
-            border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite;
+            width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-bottom-color: #2563eb;
+            border-radius: 50%; display: inline-block; animation: rotation 0.8s linear infinite;
         }
         @keyframes rotation { 0% { transform: rotate(0deg) } 100% { transform: rotate(360deg) } }
         
@@ -60,17 +68,16 @@
 
     <script>
         window.process = { env: { API_KEY: "", NODE_ENV: "production" } };
-        function showStartupError(error) {
-            const overlay = document.getElementById('error-overlay');
-            if (overlay) {
-                overlay.style.display = 'block';
-                overlay.innerHTML += `<div style="margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.2); padding-bottom:10px;">
-                    <b style="color:#fca5a5">[V1.3.0 ARCHITECT ERROR]:</b> ${error.message || error}
-                </div>`;
+        function hideSplash() {
+            const splash = document.getElementById('splash');
+            const root = document.getElementById('root');
+            if(splash) {
+                splash.style.opacity = '0'; 
+                if (root) root.classList.add('mounted');
+                setTimeout(() => splash.remove(), 450); 
             }
         }
-        window.onerror = (msg, url, line, col, error) => showStartupError(error || msg);
-        window.onunhandledrejection = (event) => showStartupError(event.reason);
+        window.hideAppSplash = hideSplash;
     </script>
 
     <script type="importmap">
@@ -79,8 +86,8 @@
     "react": "https://esm.sh/react@19.0.0",
     "react-dom": "https://esm.sh/react-dom@19.0.0",
     "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
-    "lucide-react": "https://esm.sh/lucide-react@0.475.0?external=react,react-dom",
-    "@google/genai": "https://esm.sh/@google/genai@1.37.0",
+    "lucide-react": "https://esm.sh/lucide-react@0.475.0?deps=react@19.0.0,react-dom@19.0.0",
+    "@google/genai": "https://esm.sh/@google/genai@1.37.0?deps=react@19.0.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
     "vite": "https://esm.sh/vite@^7.3.1",
@@ -96,32 +103,11 @@
 
     <div id="splash">
         <div class="loader"></div>
-        <p id="loading-status" style="color: white; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; margin-top: 25px;">ЗОДЧИЙ • ВЕРСИЯ 1.3.0 • ДИАГНОСТИКА СВЯЗИ</p>
+        <p id="loading-status" style="color: white; font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.4em; margin-top: 20px; opacity: 0.6;">ЗОДЧИЙ • v1.3.2</p>
     </div>
 
     <div id="root"></div>
 
     <script type="module" src="./index.tsx"></script>
-
-    <script type="module">
-        const hideSplash = () => {
-            const splash = document.getElementById('splash');
-            if(splash) {
-                splash.style.opacity = '0'; 
-                setTimeout(() => splash.remove(), 600); 
-            }
-        };
-
-        let checks = 0;
-        const checkMounted = setInterval(() => {
-            checks++;
-            const root = document.getElementById('root');
-            if (root && root.children.length > 0) {
-                clearInterval(checkMounted);
-                hideSplash();
-            }
-            if (checks > 100) clearInterval(checkMounted); 
-        }, 100);
-    </script>
 </body>
 </html>
