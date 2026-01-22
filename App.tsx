@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   UserRole, Task, TaskStatus, Project, User, ProjectStatus, 
-  ROLE_LABELS, APP_VERSION, AppNotification, AppSnapshot, FileCategory, GithubConfig, InvitePayload, GlobalChatMessage, Comment 
+  ROLE_LABELS, APP_VERSION, AppNotification, AppSnapshot, FileCategory, GithubConfig, InvitePayload, GlobalChatMessage, Comment, ProjectFile 
 } from './types.ts';
 import TaskDetails from './components/TaskDetails.tsx';
 import { AdminPanel } from './components/AdminPanel.tsx';
@@ -43,6 +43,15 @@ const fromBase64 = (str: string) => {
   catch (e) { return str; }
 };
 
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
+};
+
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.AUTH_USER);
@@ -52,9 +61,9 @@ const App: React.FC = () => {
   const [activeRole, setActiveRole] = useState<UserRole>(currentUser?.role || UserRole.ADMIN);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState(false);
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
   
   const syncLockRef = useRef(false);
-  const lastCloudTimeRef = useRef<number>(0);
 
   const [db, setDb] = useState<AppSnapshot>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.MASTER_STATE);
@@ -98,28 +107,6 @@ const App: React.FC = () => {
             evidenceCount: 0,
             comments: [],
             updatedAt: new Date().toISOString()
-          },
-          {
-            id: 2,
-            projectId: defaultProjectId,
-            title: "Монтаж лифтовых шахт",
-            description: "Установка направляющих в секции А.",
-            status: TaskStatus.TODO,
-            evidenceUrls: [],
-            evidenceCount: 0,
-            comments: [],
-            updatedAt: new Date().toISOString()
-          },
-          {
-            id: 3,
-            projectId: defaultProjectId,
-            title: "Гидроизоляция фундамента (Блок Б)",
-            description: "Нанесение праймера и оклейка в два слоя.",
-            status: TaskStatus.DONE,
-            evidenceUrls: [],
-            evidenceCount: 0,
-            comments: [],
-            updatedAt: new Date().toISOString()
           }
         ],
         users: [
@@ -143,41 +130,13 @@ const App: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
 
   // СБРОС НА ГЛАВНУЮ
-  const handleGoHome = () => {
+  const handleGoHome = useCallback(() => {
     setActiveTab('dashboard');
     setSelectedProjectId(null);
     setSelectedTaskId(null);
     setIsAddingProject(false);
     setEditingProject(null);
     setShowNotifications(false);
-  };
-
-  // СИНХРОНИЗАЦИЯ
-  const pushToCloud = useCallback(async (snapshot: AppSnapshot) => {
-    const raw = localStorage.getItem(STORAGE_KEYS.GH_CONFIG);
-    if (!raw) return;
-    try {
-      syncLockRef.current = true;
-      setIsSyncing(true);
-      const cfg: GithubConfig = JSON.parse(raw);
-      const url = `https://api.github.com/repos/${cfg.repo}/contents/${cfg.path}`;
-      const headers = { 'Authorization': `Bearer ${cfg.token.trim()}`, 'Accept': 'application/vnd.github+json' };
-      
-      const getRes = await fetch(url, { headers });
-      const sha = getRes.ok ? (await getRes.json()).sha : "";
-      
-      await fetch(url, {
-        method: 'PUT',
-        headers: { ...headers, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          message: `Sync v${APP_VERSION}`, 
-          content: toBase64(JSON.stringify(snapshot, null, 2)), 
-          sha: sha || undefined 
-        })
-      });
-      lastCloudTimeRef.current = new Date(snapshot.timestamp).getTime();
-    } catch (e) { setSyncError(true); } 
-    finally { setIsSyncing(false); syncLockRef.current = false; }
   }, []);
 
   const handleUpdateDB = useCallback((updater: (prev: AppSnapshot) => AppSnapshot) => {
@@ -210,6 +169,7 @@ const App: React.FC = () => {
     };
     handleUpdateDB(prev => ({ ...prev, projects: [newProject, ...prev.projects] }));
     setIsAddingProject(false);
+    setSelectedProjectId(newProject.id);
   };
 
   const updateProject = (p: Project) => {
@@ -218,6 +178,32 @@ const App: React.FC = () => {
       projects: prev.projects.map(item => item.id === p.id ? p : item)
     }));
     setEditingProject(null);
+  };
+
+  const addProjectFile = async (projectId: number, file: File, category: FileCategory) => {
+    try {
+      setIsProcessingFile(true);
+      const base64 = await fileToBase64(file);
+      const newFile: ProjectFile = {
+        name: file.name,
+        url: base64,
+        category: category,
+        createdAt: new Date().toISOString()
+      };
+
+      handleUpdateDB(prev => ({
+        ...prev,
+        projects: prev.projects.map(p => p.id === projectId ? {
+          ...p,
+          fileLinks: [...(p.fileLinks || []), newFile]
+        } : p)
+      }));
+    } catch (e) {
+      console.error("File processing error", e);
+      alert("Ошибка при сохранении файла. Возможно, он слишком большой.");
+    } finally {
+      setIsProcessingFile(false);
+    }
   };
 
   const addTask = (projectId: number) => {
@@ -236,13 +222,24 @@ const App: React.FC = () => {
     setSelectedTaskId(newTask.id);
   };
 
-  const updateTaskStatus = (taskId: number, newStatus: TaskStatus, evidenceFile?: File, comment?: string) => {
+  const updateTaskStatus = async (taskId: number, newStatus: TaskStatus, evidenceFile?: File, comment?: string) => {
+    let evidenceUrl: string | null = null;
+    if (evidenceFile) {
+      try {
+        setIsProcessingFile(true);
+        evidenceUrl = await fileToBase64(evidenceFile);
+      } catch (e) {
+        console.error("Evidence processing error", e);
+      } finally {
+        setIsProcessingFile(false);
+      }
+    }
+
     handleUpdateDB(prev => {
       const task = prev.tasks.find(t => t.id === taskId);
       if (!task) return prev;
       
       const project = prev.projects.find(p => p.id === task.projectId);
-      const evidenceUrl = evidenceFile ? URL.createObjectURL(evidenceFile) : null;
       
       const updatedTask: Task = {
         ...task,
@@ -253,7 +250,6 @@ const App: React.FC = () => {
         supervisorComment: comment || task.supervisorComment
       };
 
-      // Создаем уведомление
       const newNotif: AppNotification = {
         id: Date.now(),
         type: newStatus === TaskStatus.REVIEW ? 'review' : newStatus === TaskStatus.REWORK ? 'rework' : 'done',
@@ -271,6 +267,13 @@ const App: React.FC = () => {
         notifications: [newNotif, ...prev.notifications].slice(0, 50)
       };
     });
+  };
+
+  const updateTaskDetails = (updatedTask: Task) => {
+    handleUpdateDB(prev => ({
+      ...prev,
+      tasks: prev.tasks.map(t => t.id === updatedTask.id ? updatedTask : t)
+    }));
   };
 
   const addComment = (taskId: number, text: string) => {
@@ -338,11 +341,21 @@ const App: React.FC = () => {
 
   return (
     <div className={`flex flex-col h-full overflow-hidden ${activeRole === UserRole.ADMIN ? 'bg-[#0f172a]' : 'bg-[#f8fafc]'}`}>
+      {isProcessingFile && (
+        <div className="fixed inset-0 z-[999] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-4">
+            <RefreshCw className="text-blue-600 animate-spin" size={32} />
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-800">Обработка данных...</p>
+          </div>
+        </div>
+      )}
+
       {/* HEADER */}
       <header className={`px-5 py-4 border-b flex items-center justify-between sticky top-0 z-50 backdrop-blur-md ${activeRole === UserRole.ADMIN ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-slate-100'}`}>
         <button 
           onClick={handleGoHome}
-          className="flex items-center gap-3 active:scale-95 transition-all text-left group"
+          title="Домой"
+          className="flex items-center gap-3 active:scale-95 transition-all text-left group cursor-pointer"
         >
           <Logo size={32} isMaster={activeRole === UserRole.ADMIN} className="group-hover:rotate-12 transition-transform" />
           <div>
@@ -383,7 +396,7 @@ const App: React.FC = () => {
             onStatusChange={updateTaskStatus}
             onAddComment={addComment}
             onAddEvidence={(tid, file) => updateTaskStatus(tid, selectedTask.status, file)}
-            onUpdateTask={(t) => handleUpdateDB(prev => ({ ...prev, tasks: prev.tasks.map(it => it.id === t.id ? t : it) }))}
+            onUpdateTask={updateTaskDetails}
           />
         ) : selectedProjectId && selectedProject ? (
           <ProjectView 
@@ -396,6 +409,7 @@ const App: React.FC = () => {
             onAddTask={() => addTask(selectedProjectId)}
             onSelectTask={setSelectedTaskId}
             onSendMessage={(txt) => addProjectComment(selectedProjectId, txt)}
+            onAddFile={addProjectFile}
           />
         ) : editingProject ? (
           <ProjectForm project={editingProject} onSave={updateProject} onCancel={() => setEditingProject(null)} />
@@ -436,21 +450,13 @@ const App: React.FC = () => {
                           <span className="text-sm font-black text-blue-600">{p.progress}%</span>
                         </div>
                         <div className="flex -space-x-2">
-                          {[1,2,3].map(i => (
-                            <div key={i} className="w-7 h-7 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[8px] font-black text-slate-400 uppercase">
-                              {i}
-                            </div>
-                          ))}
+                          <div className="w-7 h-7 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[8px] font-black text-slate-400 uppercase">
+                            {p.fileLinks?.length || 0}
+                          </div>
                         </div>
                       </div>
                     </div>
                   ))}
-                  {db.projects.length === 0 && (
-                    <div className="col-span-full py-20 text-center flex flex-col items-center gap-4 text-slate-400">
-                      <Building2 size={48} className="opacity-20" />
-                      <p className="text-[10px] font-black uppercase tracking-widest">Список объектов пуст</p>
-                    </div>
-                  )}
                 </div>
               </div>
             )}

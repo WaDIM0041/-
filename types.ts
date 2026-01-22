@@ -1,5 +1,4 @@
-
-export const APP_VERSION = '1.7.0';
+export const APP_VERSION = '1.8.2';
 export const STANDARD_NAME = 'Zodchiy Enterprise Core';
 
 export enum UserRole {
@@ -60,7 +59,6 @@ export interface Comment {
   createdAt: string;
 }
 
-// Added GlobalChatMessage interface to fix import errors and support global chat functionality
 export interface GlobalChatMessage {
   id: string | number;
   userId: number;
@@ -138,7 +136,7 @@ export interface AppSnapshot {
   tasks: Task[];
   users: User[];
   notifications: AppNotification[];
-  chatMessages?: GlobalChatMessage[]; // Updated from any[] to GlobalChatMessage[] for type safety
+  chatMessages?: GlobalChatMessage[];
   config?: GithubConfig;
   buildNumber?: number;
 }

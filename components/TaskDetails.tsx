@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from 'react';
 import { Task, TaskStatus, UserRole, ROLE_LABELS, TASK_STATUS_LABELS, ProjectFile, FileCategory } from '../types.ts';
 import { 
@@ -19,7 +18,10 @@ import {
   Sparkles,
   AlertTriangle,
   CheckCircle2,
-  Eye
+  Eye,
+  Pencil,
+  Save,
+  Type
 } from 'lucide-react';
 import { analyzeConstructionTask } from '../services/aiService.ts';
 import { FilePreviewer } from './FilePreviewer.tsx';
@@ -48,6 +50,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const evidenceInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
   
   const [reworkComment, setReworkComment] = useState('');
   const [showReworkInput, setShowReworkInput] = useState(false);
@@ -55,11 +58,25 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
   const [isAIAnalyzing, setIsAIAnalyzing] = useState(false);
   const [previewImage, setPreviewImage] = useState<{url: string, index: number} | null>(null);
 
+  // Состояния редактирования информации
+  const isNewTask = task.title === 'Новая задача' && task.description === 'Описание работ...';
+  const [isEditingInfo, setIsEditingInfo] = useState(isNewTask);
+  const [editedTitle, setEditedTitle] = useState(task.title);
+  const [editedDescription, setEditedDescription] = useState(task.description);
+
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [task.comments]);
+
+  useEffect(() => {
+    if (isEditingInfo && titleRef.current) {
+      titleRef.current.focus();
+    }
+  }, [isEditingInfo]);
+
+  const canEditInfo = isAdmin || role === UserRole.MANAGER;
 
   const handleStatusChangeWithFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -81,6 +98,17 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
     if (!newCommentText.trim()) return;
     onAddComment(task.id, newCommentText.trim());
     setNewCommentText('');
+  };
+
+  const handleSaveInfo = () => {
+    if (!onUpdateTask) return;
+    onUpdateTask({
+      ...task,
+      title: editedTitle.trim() || task.title,
+      description: editedDescription.trim() || task.description,
+      updatedAt: new Date().toISOString()
+    });
+    setIsEditingInfo(false);
   };
 
   const runAIAudit = async () => {
@@ -129,15 +157,14 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
           <ChevronLeft size={18} className="sm:w-5 sm:h-5" /> Назад
         </button>
         <div className="flex items-center gap-1.5 sm:gap-2">
-           {task.aiAnalysis && (
-            <div className={`p-2 sm:p-2.5 rounded-lg sm:rounded-xl border flex items-center gap-1.5 ${
-              task.aiAnalysis.status === 'passed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-              task.aiAnalysis.status === 'warning' ? 'bg-amber-50 text-amber-600 border-amber-100' : 
-              'bg-rose-50 text-rose-600 border-rose-100'
-            }`}>
-              <Sparkles size={14} className="sm:w-4 sm:h-4" />
-              <span className="text-[8px] sm:text-[10px] font-black uppercase">AI</span>
-            </div>
+          {canEditInfo && !isEditingInfo && (
+            <button 
+              onClick={() => setIsEditingInfo(true)}
+              className="p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-90"
+              title="Редактировать описание"
+            >
+              <Pencil size={18} />
+            </button>
           )}
           <span className={`text-[9px] sm:text-[10px] uppercase font-black px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl border ${statusColors[task.status]}`}>
             {TASK_STATUS_LABELS[task.status]}
@@ -146,8 +173,54 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
       </div>
 
       <div className="mb-8 sm:mb-10 px-1">
-        <h2 className="text-xl sm:text-2xl font-black text-slate-800 mb-2 sm:mb-3 leading-tight tracking-tight">{task.title}</h2>
-        <p className="text-slate-600 text-sm sm:text-base font-medium leading-relaxed">{task.description}</p>
+        {isEditingInfo ? (
+          <div className="space-y-4 animate-in fade-in duration-300 bg-slate-50 p-6 rounded-[2rem] border border-blue-100 shadow-inner">
+            <div className="flex items-center gap-3 mb-2">
+              <Type size={16} className="text-blue-500" />
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Параметры задачи</span>
+            </div>
+            <input 
+              ref={titleRef}
+              value={editedTitle}
+              onChange={(e) => setEditedTitle(e.target.value)}
+              placeholder="Название задачи"
+              className="w-full text-lg sm:text-xl font-black text-slate-800 border-b-2 border-blue-500 outline-none pb-2 bg-transparent px-2"
+            />
+            <textarea 
+              value={editedDescription}
+              onChange={(e) => setEditedDescription(e.target.value)}
+              placeholder="Подробное описание работ..."
+              rows={4}
+              className="w-full text-slate-600 text-sm sm:text-base font-medium leading-relaxed border-b border-blue-200 outline-none bg-transparent px-2 resize-none"
+            />
+            <div className="flex gap-2 pt-4">
+              <button 
+                onClick={() => { setIsEditingInfo(false); setEditedTitle(task.title); setEditedDescription(task.description); }}
+                className="flex-1 bg-white text-slate-400 font-black py-4 rounded-2xl uppercase text-[9px] tracking-widest border border-slate-200 active:scale-95 transition-all"
+              >
+                Отмена
+              </button>
+              <button 
+                onClick={handleSaveInfo}
+                className="flex-[2] bg-blue-600 text-white font-black py-4 rounded-2xl uppercase text-[9px] tracking-widest flex items-center justify-center gap-3 shadow-xl shadow-blue-100 active:scale-95 transition-all"
+              >
+                <Save size={16} /> Применить
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div 
+            className={`group relative ${canEditInfo ? 'cursor-pointer hover:bg-slate-50 rounded-2xl p-4 -mx-4 transition-all' : ''}`}
+            onClick={() => canEditInfo && setIsEditingInfo(true)}
+          >
+            <h2 className="text-xl sm:text-2xl font-black text-slate-800 mb-2 sm:mb-3 leading-tight tracking-tighter flex items-center gap-3 uppercase">
+              {task.title}
+              {canEditInfo && <Pencil size={14} className="opacity-0 group-hover:opacity-100 text-blue-500 transition-opacity" />}
+            </h2>
+            <div className="h-0.5 w-12 bg-blue-600 mb-4"></div>
+            <p className="text-slate-600 text-sm sm:text-base font-medium leading-relaxed whitespace-pre-wrap">{task.description}</p>
+          </div>
+        )}
       </div>
 
       {task.aiAnalysis && (
@@ -161,16 +234,6 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
             <h4 className="text-[10px] sm:text-sm font-black uppercase tracking-widest">Анализ ЗОДЧИЙ AI</h4>
           </div>
           <p className="text-xs sm:text-sm font-bold text-slate-700 leading-relaxed mb-3 sm:mb-4">{task.aiAnalysis.feedback}</p>
-          {task.aiAnalysis.detectedIssues.length > 0 && (
-            <ul className="space-y-1 sm:space-y-2">
-              {task.aiAnalysis.detectedIssues.map((issue, idx) => (
-                <li key={idx} className="flex items-start gap-2 text-[10px] sm:text-[11px] font-bold text-slate-500">
-                  <AlertTriangle size={12} className="shrink-0 text-rose-400 mt-0.5 sm:w-3.5 sm:h-3.5" />
-                  {issue}
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
       )}
 
