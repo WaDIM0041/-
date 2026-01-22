@@ -27,20 +27,16 @@ import {
   Settings,
   Plus,
   ShieldCheck,
-  Building2
+  Building2,
+  Save
 } from 'lucide-react';
 
-// СТАБИЛЬНЫЕ КЛЮЧИ
+// ФИКСИРОВАННЫЕ КЛЮЧИ ХРАНИЛИЩА (НИКОГДА НЕ МЕНЯТЬ)
 export const STORAGE_KEYS = {
   MASTER_STATE: 'zodchiy_enterprise_database_stable_v1',
   AUTH_USER: 'zodchiy_auth_session_stable_v1',
-  GH_CONFIG: 'zodchiy_cloud_config_stable_v1'
-};
-
-const toBase64 = (str: string) => btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (m, p1) => String.fromCharCode(parseInt(p1, 16))));
-const fromBase64 = (str: string) => {
-  try { return decodeURIComponent(Array.prototype.map.call(atob(str), (c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')); }
-  catch (e) { return str; }
+  GH_CONFIG: 'zodchiy_cloud_config_stable_v1',
+  EMERGENCY_BACKUP: 'zodchiy_emergency_backup_v1'
 };
 
 const fileToBase64 = (file: File): Promise<string> => {
@@ -64,16 +60,22 @@ const App: React.FC = () => {
   const [isProcessingFile, setIsProcessingFile] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
-  const syncLockRef = useRef(false);
-
   const [db, setDb] = useState<AppSnapshot>(() => {
+    // 1. Попытка загрузить основную базу
     const saved = localStorage.getItem(STORAGE_KEYS.MASTER_STATE);
+    const backup = localStorage.getItem(STORAGE_KEYS.EMERGENCY_BACKUP);
+    const rawData = saved || backup;
+
     try {
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return { ...parsed, version: APP_VERSION };
+      if (rawData) {
+        const parsed = JSON.parse(rawData);
+        // Если база существует, просто обновляем версию в объекте, не затирая данные
+        if (parsed.projects && Array.isArray(parsed.projects)) {
+          return { ...parsed, version: APP_VERSION };
+        }
       }
       
+      // 2. Если базы нет совсем (первый запуск), создаем демо-данные
       const defaultProjectId = Date.now();
       return {
         version: APP_VERSION,
@@ -118,7 +120,10 @@ const App: React.FC = () => {
         notifications: [],
         chatMessages: []
       };
-    } catch { 
+    } catch (e) { 
+      console.error("Critical: Data restore failed", e);
+      // В случае фатальной ошибки парсинга возвращаем пустую структуру, 
+      // но НЕ затираем localStorage, чтобы можно было восстановить вручную
       return { version: APP_VERSION, timestamp: new Date().toISOString(), projects: [], tasks: [], users: [], notifications: [], chatMessages: [] }; 
     }
   });
@@ -130,7 +135,33 @@ const App: React.FC = () => {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  // СБРОС НА ГЛАВНУЮ
+  // ГАРАНТИРОВАННОЕ СОХРАНЕНИЕ
+  const handleUpdateDB = useCallback((updater: (prev: AppSnapshot) => AppSnapshot) => {
+    setDb(prev => {
+      const next = updater(prev);
+      next.timestamp = new Date().toISOString();
+      try {
+        const serialized = JSON.stringify(next);
+        localStorage.setItem(STORAGE_KEYS.MASTER_STATE, serialized);
+        localStorage.setItem(STORAGE_KEYS.EMERGENCY_BACKUP, serialized); // Дубликат для безопасности
+      } catch (e) {
+        if (e.name === 'QuotaExceededError') {
+          alert("Критическая ошибка: Память браузера переполнена! Удалите старые фото из задач.");
+        }
+      }
+      return next;
+    });
+  }, []);
+
+  const handleRefreshApp = () => {
+    setIsRefreshing(true);
+    // Принудительно сохраняем текущее состояние перед релоадом
+    handleUpdateDB(prev => prev);
+    setTimeout(() => {
+      window.location.reload();
+    }, 800);
+  };
+
   const handleGoHome = useCallback(() => {
     setActiveTab('dashboard');
     setSelectedProjectId(null);
@@ -139,22 +170,6 @@ const App: React.FC = () => {
     setEditingProject(null);
     setShowNotifications(false);
   }, []);
-
-  const handleUpdateDB = useCallback((updater: (prev: AppSnapshot) => AppSnapshot) => {
-    setDb(prev => {
-      const next = updater(prev);
-      next.timestamp = new Date().toISOString();
-      localStorage.setItem(STORAGE_KEYS.MASTER_STATE, JSON.stringify(next));
-      return next;
-    });
-  }, []);
-
-  const handleRefreshApp = () => {
-    setIsRefreshing(true);
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
-  };
 
   // БИЗНЕС-ЛОГИКА
   const addProject = (p: Partial<Project>) => {
@@ -208,7 +223,7 @@ const App: React.FC = () => {
       }));
     } catch (e) {
       console.error("File processing error", e);
-      alert("Ошибка при сохранении файла. Возможно, он слишком большой.");
+      alert("Ошибка при сохранении файла. Память переполнена.");
     } finally {
       setIsProcessingFile(false);
     }
@@ -354,7 +369,7 @@ const App: React.FC = () => {
           <div className="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-4">
             <RefreshCw className="text-blue-600 animate-spin" size={32} />
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-800">
-              {isRefreshing ? 'Обновление интерфейса...' : 'Обработка данных...'}
+              {isRefreshing ? 'Фиксация данных и обновление...' : 'Обработка данных...'}
             </p>
           </div>
         </div>
@@ -384,7 +399,6 @@ const App: React.FC = () => {
             <Cloud size={14} className={isSyncing ? 'text-blue-500 animate-pulse' : 'text-slate-300'} />
           </div>
           
-          {/* ОБНОВИТЬ */}
           <button 
             onClick={handleRefreshApp}
             title="Обновить приложение"

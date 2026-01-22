@@ -1,4 +1,4 @@
-const CACHE_NAME = 'zodchiy-v1.8.3';
+const CACHE_NAME = 'zodchiy-v1.8.4';
 const ASSETS = [
   '/',
   '/index.html',
@@ -15,11 +15,8 @@ self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
   );
-  self.clients.claim().then(() => {
-    self.clients.matchAll().then(clients => {
-      clients.forEach(client => client.navigate(client.url));
-    });
-  });
+  self.clients.claim();
+  // Команда navigate() удалена, чтобы не прерывать сессию пользователя при обновлении кэша.
 });
 
 self.addEventListener('fetch', (e) => {
