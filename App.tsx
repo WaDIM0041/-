@@ -17,7 +17,7 @@ import { Logo } from './components/Logo.tsx';
 import { 
   LayoutGrid, LogOut, RefreshCw, Bell, Cloud, Wifi, 
   MessageSquare, Settings, Plus, ShieldCheck, Building2,
-  AlertCircle, CheckCircle2
+  AlertCircle, CheckCircle2, Clock
 } from 'lucide-react';
 
 export const STORAGE_KEYS = {
@@ -206,6 +206,9 @@ const cloud = {
           timestamp: new Date().toISOString(),
           lastSync: new Date().toISOString()
         };
+      } else {
+        // Если файла в облаке еще нет, создаем его на базе локального
+        final = { ...local, lastSync: new Date().toISOString() };
       }
 
       const content = encodeUnicode(JSON.stringify(final));
@@ -237,7 +240,7 @@ const App: React.FC = () => {
   
   const [activeRole, setActiveRole] = useState<UserRole>(currentUser?.role || UserRole.ADMIN);
   const [db, setDb] = useState<AppSnapshot | null>(null);
-  const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'error'>('synced');
+  const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'error' | 'local_only'>('synced');
   const [isLoading, setIsLoading] = useState(true);
   
   const syncTimerRef = useRef<any>(null);
@@ -261,7 +264,10 @@ const App: React.FC = () => {
 
   const runSync = useCallback(async (current: AppSnapshot) => {
     const config = cloud.getConfig();
-    if (!config?.token) return;
+    if (!config?.token) {
+      setSyncStatus('local_only');
+      return;
+    }
 
     setSyncStatus('syncing');
     const result = await cloud.sync(current);
@@ -287,10 +293,13 @@ const App: React.FC = () => {
       if (!prev) return prev;
       const next = updater(prev);
       next.timestamp = new Date().toISOString();
+      
+      // Мгновенное локальное сохранение
       idb.set('state', next);
+      setSyncStatus('local_only'); // Помечаем, что есть локальные изменения, не ушедшие в облако
 
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
-      syncTimerRef.current = setTimeout(() => runSync(next), 3000);
+      syncTimerRef.current = setTimeout(() => runSync(next), 2000);
 
       return next;
     });
@@ -387,14 +396,55 @@ const App: React.FC = () => {
             <h1 className={`text-xs font-black uppercase tracking-widest leading-none transition-colors group-hover:text-blue-500 ${activeRole === UserRole.ADMIN ? 'text-white' : 'text-slate-900'}`}>Зодчий</h1>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-[7px] font-black uppercase px-1 py-0.5 rounded bg-blue-600 text-white">{ROLE_LABELS[activeRole]}</span>
-              <div className={`flex items-center gap-1 px-1 py-0.5 rounded-full transition-all ${syncStatus === 'syncing' ? 'bg-blue-50' : 'bg-slate-100'}`}>
-                {syncStatus === 'syncing' ? <RefreshCw size={8} className="text-blue-500 animate-spin" /> : syncStatus === 'synced' ? <CheckCircle2 size={8} className="text-emerald-500" /> : <AlertCircle size={8} className="text-rose-500" />}
-                <span className={`text-[6px] font-black uppercase ${syncStatus === 'syncing' ? 'text-blue-500' : 'text-slate-500'}`}>{syncStatus === 'syncing' ? 'Обмен...' : syncStatus === 'synced' ? 'В сети' : 'Offline'}</span>
-              </div>
             </div>
           </div>
         </button>
-        <button onClick={() => { localStorage.removeItem(STORAGE_KEYS.AUTH_USER); setCurrentUser(null); }} className="p-2.5 bg-rose-50 text-rose-500 rounded-xl active:scale-90 transition-transform"><LogOut size={18} /></button>
+
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => db && runSync(db)}
+            disabled={syncStatus === 'syncing'}
+            className={`flex flex-col items-end gap-1 px-3 py-1.5 rounded-xl border transition-all active:scale-90 ${
+              syncStatus === 'syncing' ? 'bg-blue-50 border-blue-200' : 
+              syncStatus === 'error' ? 'bg-rose-50 border-rose-200' : 
+              syncStatus === 'local_only' ? 'bg-amber-50 border-amber-200 animate-pulse' :
+              'bg-emerald-50 border-emerald-200'
+            }`}
+          >
+            <div className="flex items-center gap-1.5">
+              {syncStatus === 'syncing' ? <RefreshCw size={10} className="text-blue-500 animate-spin" /> : 
+               syncStatus === 'synced' ? <CheckCircle2 size={10} className="text-emerald-500" /> : 
+               syncStatus === 'local_only' ? <Cloud size={10} className="text-amber-500" /> :
+               <AlertCircle size={10} className="text-rose-500" />}
+              <span className={`text-[8px] font-black uppercase tracking-tighter ${
+                syncStatus === 'syncing' ? 'text-blue-600' : 
+                syncStatus === 'synced' ? 'text-emerald-600' : 
+                syncStatus === 'local_only' ? 'text-amber-600' :
+                'text-rose-600'
+              }`}>
+                {syncStatus === 'syncing' ? 'Обмен...' : 
+                 syncStatus === 'synced' ? 'В Облаке' : 
+                 syncStatus === 'local_only' ? 'Локально' :
+                 'Ошибка'}
+              </span>
+            </div>
+            {db.lastSync && (
+              <div className="flex items-center gap-1 opacity-60">
+                <Clock size={7} className="text-slate-400" />
+                <span className="text-[6px] font-bold text-slate-400 uppercase">
+                  {new Date(db.lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            )}
+          </button>
+          
+          <button 
+            onClick={() => { localStorage.removeItem(STORAGE_KEYS.AUTH_USER); setCurrentUser(null); }} 
+            className="p-2.5 bg-rose-50 text-rose-500 rounded-xl active:scale-90 transition-transform"
+          >
+            <LogOut size={18} />
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 overflow-y-auto p-4 pb-28">
