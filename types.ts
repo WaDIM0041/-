@@ -1,5 +1,5 @@
 
-export const APP_VERSION = '1.9.0';
+export const APP_VERSION = '2.0.0';
 export const STANDARD_NAME = 'Zodchiy Enterprise Core';
 
 export enum UserRole {
@@ -57,6 +57,7 @@ export interface Comment {
   role: UserRole;
   text: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface GlobalChatMessage {
@@ -75,6 +76,7 @@ export interface User {
   role: UserRole;
   password?: string;
   lastActive?: string;
+  updatedAt?: string;
 }
 
 export interface ProjectFile {
@@ -83,6 +85,7 @@ export interface ProjectFile {
   url: string; 
   category: FileCategory;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Project {
@@ -124,14 +127,6 @@ export interface GithubConfig {
   path: string; 
 }
 
-export interface InvitePayload {
-  token: string;
-  repo: string;
-  path: string;
-  role: UserRole;
-  username: string;
-}
-
 export interface AppSnapshot {
   version: string;
   timestamp: string;
@@ -153,4 +148,13 @@ export interface AppNotification {
   targetRole: UserRole;
   isRead: boolean;
   createdAt: string;
+}
+
+// Missing InvitePayload definition for sharing access
+export interface InvitePayload {
+  token: string;
+  repo: string;
+  path: string;
+  role: UserRole;
+  username: string;
 }

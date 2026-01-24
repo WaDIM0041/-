@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'zodchiy-v1.9.1';
+const CACHE_NAME = 'zodchiy-v1.9.4';
 const ASSETS = [
   '/',
   '/index.html',
@@ -11,7 +11,7 @@ const ASSETS = [
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then(c => {
-      console.log('Zodchiy: Caching shell assets');
+      console.log('Zodchiy: Caching shell assets v1.9.4');
       return c.addAll(ASSETS);
     })
   );
@@ -27,18 +27,10 @@ self.addEventListener('activate', (e) => {
   self.clients.claim();
 });
 
-// Network-first strategy for dynamic content, Cache-first for static
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
-  
-  // API calls and Cloud Sync should never be cached via SW (GitHub API handles its own headers)
-  if (url.hostname.includes('api.github.com') || url.pathname.includes('/api/')) {
-    return;
-  }
-
+  if (url.hostname.includes('api.github.com') || url.pathname.includes('/api/')) return;
   e.respondWith(
-    fetch(e.request).catch(() => {
-      return caches.match(e.request);
-    })
+    fetch(e.request).catch(() => caches.match(e.request))
   );
 });
