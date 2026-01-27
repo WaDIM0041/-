@@ -1,5 +1,5 @@
 
-export const APP_VERSION = '2.0.2';
+export const APP_VERSION = '2.0.4';
 export const STANDARD_NAME = 'Zodchiy Enterprise Core';
 
 export enum UserRole {
@@ -37,6 +37,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 };
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
+  // Fix: Use TaskStatus instead of Status to resolve 'Cannot find name' and missing property errors
   [TaskStatus.TODO]: 'В плане',
   [TaskStatus.IN_PROGRESS]: 'В работе',
   [TaskStatus.REVIEW]: 'Проверка',
