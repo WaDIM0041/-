@@ -1,0 +1,110 @@
+{
+  "version": "2.0.4",
+  "timestamp": "2026-01-27T00:39:24.805Z",
+  "projects": [
+    {
+      "id": 1715000000,
+      "name": "Частный дом • Смирнов В.И.",
+      "description": "Строительство двухэтажного коттеджа из газобетона с монолитным фундаментом.",
+      "clientFullName": "Смирнов Валентин И.",
+      "city": "Елизово",
+      "street": "Олимпийская улица, 42",
+      "phone": "8 999 0202 5544",
+      "telegram": "@vsmirnov_kam",
+      "address": "г. Елизово, ул. Олимпийская, д. 42",
+      "geoLocation": {
+        "lat": 53.1873,
+        "lon": 158.3905
+      },
+      "fileLinks": [],
+      "progress": 45,
+      "status": "in_progress",
+      "comments": [
+        {
+          "id": 1,
+          "author": "Администратор",
+          "role": "admin",
+          "text": "Объект заведен в систему. Все чертежи в разделе хранилища.",
+          "createdAt": "2026-01-27T00:38:31.982Z"
+        }
+      ],
+      "updatedAt": "2026-01-27T00:38:31.982Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": 2001,
+      "projectId": 1715000000,
+      "title": "Разметка участка и земляные работы",
+      "description": "Геодезическая разбивка осей, выемка грунта под котлован фундаментной плиты.",
+      "status": "done",
+      "evidenceUrls": [],
+      "evidenceCount": 0,
+      "comments": [],
+      "updatedAt": "2026-01-27T00:38:31.982Z"
+    },
+    {
+      "id": 2002,
+      "projectId": 1715000000,
+      "title": "Устройство песчано-гравийной подушки",
+      "description": "Засыпка ПГС слоями по 200мм с послойным тромбованием виброплитой.",
+      "status": "done",
+      "evidenceUrls": [],
+      "evidenceCount": 0,
+      "comments": [],
+      "updatedAt": "2026-01-27T00:38:31.982Z"
+    },
+    {
+      "id": 2003,
+      "projectId": 1715000000,
+      "title": "Армирование фундаментной плиты",
+      "description": "Вязка арматурного каркаса (ячейка 200х200мм) в два слоя. Установка фиксаторов.",
+      "status": "in_progress",
+      "evidenceUrls": [],
+      "evidenceCount": 0,
+      "comments": [
+        {
+          "id": 2,
+          "author": "Прораб",
+          "role": "foreman",
+          "text": "Арматура завезена полностью, заканчиваем нижний слой.",
+          "createdAt": "2026-01-27T00:38:31.982Z"
+        }
+      ],
+      "updatedAt": "2026-01-27T00:38:31.982Z"
+    },
+    {
+      "id": 2004,
+      "projectId": 1715000000,
+      "title": "Заливка бетона (М350)",
+      "description": "Прием бетона с автобетоносмесителей. Вибрирование смеси. Контроль зеркала плиты.",
+      "status": "todo",
+      "evidenceUrls": [],
+      "evidenceCount": 0,
+      "comments": [],
+      "updatedAt": "2026-01-27T00:38:31.982Z"
+    }
+  ],
+  "notifications": [],
+  "chatMessages": [],
+  "users": [
+    {
+      "id": 1,
+      "username": "Администратор",
+      "role": "admin",
+      "password": "123"
+    },
+    {
+      "id": 2,
+      "username": "Прораб",
+      "role": "foreman",
+      "password": "123"
+    },
+    {
+      "id": 3,
+      "username": "Технадзор",
+      "role": "supervisor",
+      "password": "123"
+    }
+  ]
+}
