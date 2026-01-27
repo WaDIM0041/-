@@ -1,6 +1,6 @@
 {
   "version": "2.0.4",
-  "timestamp": "2026-01-27T00:39:36.814Z",
+  "timestamp": "2026-01-27T00:49:02.015Z",
   "projects": [
     {
       "id": 1715000000,
@@ -25,10 +25,10 @@
           "author": "Администратор",
           "role": "admin",
           "text": "Объект заведен в систему. Все чертежи в разделе хранилища.",
-          "createdAt": "2026-01-27T00:38:31.982Z"
+          "createdAt": "2026-01-27T00:47:29.038Z"
         }
       ],
-      "updatedAt": "2026-01-27T00:38:31.982Z"
+      "updatedAt": "2026-01-27T00:47:29.038Z"
     }
   ],
   "tasks": [
@@ -41,7 +41,7 @@
       "evidenceUrls": [],
       "evidenceCount": 0,
       "comments": [],
-      "updatedAt": "2026-01-27T00:38:31.982Z"
+      "updatedAt": "2026-01-27T00:47:29.038Z"
     },
     {
       "id": 2002,
@@ -52,7 +52,7 @@
       "evidenceUrls": [],
       "evidenceCount": 0,
       "comments": [],
-      "updatedAt": "2026-01-27T00:38:31.982Z"
+      "updatedAt": "2026-01-27T00:47:29.038Z"
     },
     {
       "id": 2003,
@@ -68,10 +68,10 @@
           "author": "Прораб",
           "role": "foreman",
           "text": "Арматура завезена полностью, заканчиваем нижний слой.",
-          "createdAt": "2026-01-27T00:38:31.982Z"
+          "createdAt": "2026-01-27T00:47:29.038Z"
         }
       ],
-      "updatedAt": "2026-01-27T00:38:31.982Z"
+      "updatedAt": "2026-01-27T00:47:29.038Z"
     },
     {
       "id": 2004,
@@ -82,7 +82,7 @@
       "evidenceUrls": [],
       "evidenceCount": 0,
       "comments": [],
-      "updatedAt": "2026-01-27T00:38:31.982Z"
+      "updatedAt": "2026-01-27T00:47:29.038Z"
     }
   ],
   "notifications": [],
