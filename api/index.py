@@ -1,9 +1,9 @@
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
-import time
+from typing import List, Dict, Any, Optional
+import json
 
 app = FastAPI()
 
@@ -14,46 +14,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Хранилище в памяти
-GLOBAL_DB = {
+# ПРИМЕЧАНИЕ ДЛЯ АРХИТЕКТОРА: 
+# На Vercel MEM_DB сбрасывается при каждом холодном старте.
+# Для реальной работы необходимо использовать GitHub API (реализовано в фронтенде)
+# или подключить внешнюю БД (Redis/PostgreSQL).
+MEM_DB = {
     "projects": [],
     "tasks": [],
-    "app_version": "1.2.1",
-    "last_updated": 0
+    "users": [],
+    "timestamp": "2024-01-01T00:00:00.000Z"
 }
 
-class SyncPayload(BaseModel):
+class AppState(BaseModel):
     projects: List[Dict[str, Any]]
     tasks: List[Dict[str, Any]]
-    app_version: str
-    timestamp: float
+    users: Optional[List[Dict[str, Any]]] = None
+    timestamp: str
 
 @app.get("/api/sync")
 async def get_state():
-    """Возвращает текущее состояние системы"""
-    return {
-        "projects": GLOBAL_DB["projects"],
-        "tasks": GLOBAL_DB["tasks"],
-        "appVersion": GLOBAL_DB["app_version"],
-        "lastUpdated": GLOBAL_DB["last_updated"]
-    }
+    return MEM_DB
 
 @app.post("/api/sync")
-async def update_state(payload: SyncPayload):
-    """Принимает изменения и обновляет глобальное состояние"""
-    global GLOBAL_DB
-    
-    if payload.app_version > GLOBAL_DB["app_version"]:
-        GLOBAL_DB["app_version"] = payload.app_version
-
-    if payload.timestamp > GLOBAL_DB["last_updated"]:
-        GLOBAL_DB["projects"] = payload.projects
-        GLOBAL_DB["tasks"] = payload.tasks
-        GLOBAL_DB["last_updated"] = payload.timestamp
-        return {"status": "success", "synced_at": GLOBAL_DB["last_updated"]}
-    
-    return {"status": "skipped", "reason": "server data is newer"}
-
-@app.get("/api/health")
-async def health():
-    return {"status": "active", "version": GLOBAL_DB["app_version"]}
+async def post_sync(state: AppState):
+    global MEM_DB
+    if state.timestamp > MEM_DB["timestamp"]:
+        MEM_DB["projects"] = state.projects
+        MEM_DB["tasks"] = state.tasks
+        if state.users:
+            MEM_DB["users"] = state.users
+        MEM_DB["timestamp"] = state.timestamp
+        return {"status": "synced", "timestamp": MEM_DB["timestamp"]}
+    return MEM_DB

@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
-import { Project, ProjectStatus } from '../types.ts';
-import { Building2, X, Save, MapPin, Phone, Send, FileText } from 'lucide-react';
+import { Project } from '../types.ts';
+import { Building2, X, Save, MapPin, Phone, Send, FileText, Globe, User } from 'lucide-react';
 
 interface ProjectFormProps {
   project: Project;
@@ -43,43 +44,75 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSave, onCan
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
-              <Building2 size={12} /> Название объекта
-            </label>
-            <input 
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              className="w-full p-5 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 transition-all"
-              placeholder="Напр. ЖК Магистральный"
-            />
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
-                <MapPin size={12} /> Город
+                <Building2 size={12} /> Название объекта
               </label>
               <input 
-                name="city"
-                value={formData.city}
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
                 required
                 className="w-full p-5 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 transition-all"
+                placeholder="Напр. ЖК Магистральный"
               />
             </div>
             <div className="space-y-1">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
-                <MapPin size={12} /> Улица / Адрес
+                <User size={12} /> ФИО Заказчика
               </label>
               <input 
-                name="street"
-                value={formData.street}
+                name="fullName"
+                value={formData.fullName || ''}
                 onChange={handleChange}
-                required
                 className="w-full p-5 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 transition-all"
+                placeholder="Иванов Иван Иванович"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
+              <MapPin size={12} /> Полный адрес для карт
+            </label>
+            <input 
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              required
+              className="w-full p-5 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 transition-all"
+              placeholder="Город, улица, дом..."
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
+                <Globe size={12} /> Широта (Lat)
+              </label>
+              <input 
+                name="lat"
+                type="number"
+                step="any"
+                value={formData.lat || ''}
+                onChange={e => setFormData({...formData, lat: parseFloat(e.target.value)})}
+                className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-slate-900"
+                placeholder="55.7558"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
+                <Globe size={12} /> Долгота (Lon)
+              </label>
+              <input 
+                name="lon"
+                type="number"
+                step="any"
+                value={formData.lon || ''}
+                onChange={e => setFormData({...formData, lon: parseFloat(e.target.value)})}
+                className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-slate-900"
+                placeholder="37.6173"
               />
             </div>
           </div>

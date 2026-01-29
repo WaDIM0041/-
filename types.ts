@@ -1,9 +1,9 @@
 
-export const APP_VERSION = '2.0.4';
-export const STANDARD_NAME = 'Zodchiy Enterprise Core';
+export const APP_VERSION = '2.2.0';
 
 export enum UserRole {
   ADMIN = 'admin',
+  HEAD = 'head',
   MANAGER = 'manager',
   FOREMAN = 'foreman',
   SUPERVISOR = 'supervisor'
@@ -17,40 +17,30 @@ export enum TaskStatus {
   REWORK = 'rework'
 }
 
+/**
+ * Fix: Added missing FileCategory enum for task and project files
+ */
 export enum FileCategory {
+  PHOTO = 'photo',
   DOCUMENT = 'document',
-  DRAWING = 'drawing',
-  PHOTO = 'photo'
-}
-
-export enum ProjectStatus {
-  NEW = 'new',
-  IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed'
+  OTHER = 'other'
 }
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.ADMIN]: 'Администратор',
-  [UserRole.MANAGER]: 'Менеджер проектов',
-  [UserRole.FOREMAN]: 'Прораб участка',
+  [UserRole.HEAD]: 'Руководитель',
+  [UserRole.MANAGER]: 'Менеджер',
+  [UserRole.FOREMAN]: 'Прораб',
   [UserRole.SUPERVISOR]: 'Технадзор',
 };
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
-  // Fix: Use TaskStatus instead of Status to resolve 'Cannot find name' and missing property errors
   [TaskStatus.TODO]: 'В плане',
   [TaskStatus.IN_PROGRESS]: 'В работе',
   [TaskStatus.REVIEW]: 'Проверка',
-  [TaskStatus.DONE]: 'Завершено',
-  [TaskStatus.REWORK]: 'Доработка',
+  [TaskStatus.DONE]: 'Готово',
+  [TaskStatus.REWORK]: 'Правки',
 };
-
-export interface AIAnalysisResult {
-  status: 'passed' | 'warning' | 'failed';
-  feedback: string;
-  detectedIssues: string[];
-  timestamp: string;
-}
 
 export interface Comment {
   id: string | number;
@@ -58,17 +48,6 @@ export interface Comment {
   role: UserRole;
   text: string;
   createdAt: string;
-  updatedAt?: string;
-}
-
-export interface GlobalChatMessage {
-  id: string | number;
-  userId: number;
-  username: string;
-  role: UserRole;
-  text: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface User {
@@ -76,35 +55,29 @@ export interface User {
   username: string;
   role: UserRole;
   password?: string;
-  lastActive?: string;
-  updatedAt?: string;
-}
-
-export interface ProjectFile {
-  id: string;
-  name: string;
-  url: string; 
-  category: FileCategory;
-  createdAt: string;
-  updatedAt?: string;
 }
 
 export interface Project {
   id: number;
   name: string;
-  description?: string;
-  clientFullName: string;
-  city: string;
-  street: string;
+  fullName?: string;
+  address: string;
   phone: string;
   telegram: string;
-  address: string;
-  geoLocation: { lat: number; lon: number; };
-  fileLinks: ProjectFile[];
-  progress: number;
-  status: ProjectStatus;
-  comments?: Comment[];
+  lat?: number;
+  lon?: number;
+  description?: string;
   updatedAt: string;
+}
+
+/**
+ * Fix: Added missing AIAnalysisResult interface for construction auditing
+ */
+export interface AIAnalysisResult {
+  status: 'passed' | 'warning' | 'failed';
+  feedback: string;
+  detectedIssues: string[];
+  timestamp: string;
 }
 
 export interface Task {
@@ -113,48 +86,76 @@ export interface Task {
   title: string;
   description: string;
   status: TaskStatus;
-  foremanComment?: string;
-  supervisorComment?: string;
-  evidenceUrls: string[]; 
-  evidenceCount: number;
-  comments?: Comment[];
+  evidence: string[]; 
+  comments: Comment[];
   updatedAt: string;
+  supervisorComment?: string;
+  /**
+   * Fix: Added aiAnalysis property to Task interface
+   */
   aiAnalysis?: AIAnalysisResult;
 }
 
-export interface GithubConfig {
-  token: string;
-  repo: string; 
-  path: string; 
-}
-
-export interface AppSnapshot {
-  version: string;
-  timestamp: string;
-  projects: Project[];
-  tasks: Task[];
-  users: User[];
-  notifications: AppNotification[];
-  chatMessages?: GlobalChatMessage[];
-  config?: GithubConfig;
-  lastSync?: string;
-}
-
-export interface AppNotification {
-  id: number;
-  type: string;
-  projectTitle: string;
-  taskTitle: string;
-  message: string;
-  targetRole: UserRole;
-  isRead: boolean;
+/**
+ * Fix: Added missing ProjectFile interface
+ */
+export interface ProjectFile {
+  id: string | number;
+  name: string;
+  url: string;
+  category: FileCategory;
   createdAt: string;
 }
 
+export interface AppSnapshot {
+  projects: Project[];
+  tasks: Task[];
+  users: User[];
+  timestamp: string;
+}
+
+export interface SyncConfig {
+  mode: 'local' | 'api' | 'github';
+  apiUrl?: string;
+  github?: {
+    token: string;
+    repo: string;
+    path: string;
+  };
+}
+
 export interface InvitePayload {
-  token: string;
-  repo: string;
-  path: string;
+  mode: 'api' | 'github';
+  token?: string;
+  repo?: string;
+  path?: string;
+  apiUrl?: string;
   role: UserRole;
   username: string;
+}
+
+/**
+ * Fix: Added missing AppNotification interface for NotificationCenter
+ */
+export interface AppNotification {
+  id: number;
+  targetRole: UserRole;
+  projectTitle: string;
+  taskTitle: string;
+  createdAt: string;
+  type: 'review' | 'rework' | 'done';
+  message: string;
+  isRead: boolean;
+}
+
+/**
+ * Fix: Added missing GlobalChatMessage interface for GlobalChat
+ */
+export interface GlobalChatMessage {
+  id: string | number;
+  userId: number;
+  username: string;
+  role: UserRole;
+  text: string;
+  createdAt: string;
 }

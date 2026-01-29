@@ -2,11 +2,13 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AIAnalysisResult } from "../types.ts";
 
+// Инициализация строго по инструкции
 const getAI = () => {
-  if (!process.env.API_KEY) {
-    throw new Error("API Key is missing");
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("Gemini API Key is missing in environment");
   }
-  return new GoogleGenAI({ apiKey: process.env.API_KEY });
+  return new GoogleGenAI({ apiKey });
 };
 
 async function urlToBase64(url: string): Promise<string> {
@@ -17,13 +19,14 @@ async function urlToBase64(url: string): Promise<string> {
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64String = reader.result as string;
+        // Очищаем префикс base64
         resolve(base64String.split(',')[1]);
       };
-      reader.onerror = () => reject(new Error("Failed to read blob as base64"));
+      reader.onerror = () => reject(new Error("Failed to convert image to base64"));
       reader.readAsDataURL(blob);
     });
   } catch (err) {
-    console.error("Zodchiy: Conversion error", err);
+    console.error("Zodchiy AI Error: Image conversion failed", err);
     throw err;
   }
 }
@@ -36,7 +39,7 @@ export const analyzeConstructionTask = async (
   if (!imageUrls || imageUrls.length === 0) {
     return {
       status: 'warning',
-      feedback: 'Нет изображений для анализа.',
+      feedback: 'Фотографии для анализа отсутствуют.',
       detectedIssues: [],
       timestamp: new Date().toISOString()
     };
@@ -44,8 +47,9 @@ export const analyzeConstructionTask = async (
 
   try {
     const ai = getAI();
+    // Берем до 3-х последних фото для экономии токенов и точности
     const imageParts = await Promise.all(
-      imageUrls.slice(0, 3).map(async (url) => ({
+      imageUrls.slice(-3).map(async (url) => ({
         inlineData: {
           mimeType: 'image/jpeg',
           data: await urlToBase64(url)
@@ -54,12 +58,13 @@ export const analyzeConstructionTask = async (
     );
 
     const prompt = `
-      Как профессиональный инженер технадзора, проанализируй качество работ по предоставленным фото:
-      Задача: ${taskTitle}
-      Описание: ${taskDescription}
+      Как ведущий инженер технадзора, проанализируй качество строительных работ по фото.
+      Объект задачи: "${taskTitle}"
+      Техническое задание: "${taskDescription}"
       
-      Выяви возможные нарушения СНиП и ГОСТ. Оцени результат (passed/warning/failed).
-      Верни ответ строго в формате JSON.
+      Твоя задача: выявить отклонения от СНиП, ГОСТ или дефекты исполнения. 
+      Дай оценку (passed/warning/failed) и краткий профессиональный фидбек.
+      ОТВЕТЬ СТРОГО В JSON.
     `;
 
     const response = await ai.models.generateContent({
@@ -87,11 +92,11 @@ export const analyzeConstructionTask = async (
       timestamp: new Date().toISOString()
     };
   } catch (error) {
-    console.error("Zodchiy: AI Analysis error", error);
+    console.error("Zodchiy AI: Analysis failed", error);
     return {
       status: 'warning',
-      feedback: 'Автоматический анализ временно недоступен. Требуется ручная проверка технадзором.',
-      detectedIssues: ['Сбой сервиса ИИ'],
+      feedback: 'Автоматический аудит временно недоступен. Проверьте соединение или API ключ.',
+      detectedIssues: ['Ошибка сервиса аналитики'],
       timestamp: new Date().toISOString()
     };
   }
@@ -101,16 +106,16 @@ export const getAITechnicalAdvice = async (query: string, context: string): Prom
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-pro-preview',
       contents: `
-        Ты — ЗОДЧИЙ AI. Твоя специализация: строительный технадзор и нормы СНиП/ГОСТ.
-        Контекст текущего объекта: ${context}
-        Вопрос пользователя: ${query}
-        Давай краткие, профессиональные и точные ответы.
+        Ты — ИИ-ассистент системы ЗОДЧИЙ. Твой профиль: строительный контроль и СНиП.
+        Контекст: ${context}
+        Запрос: ${query}
+        Отвечай как эксперт: лаконично, используя профессиональную терминологию.
       `,
     });
-    return response.text || "Система не смогла сформировать ответ.";
+    return response.text || "Не удалось получить ответ от ядра ИИ.";
   } catch (error) {
-    return "Ошибка ИИ: сервис временно недоступен.";
+    return "Сервис консультаций ЗОДЧИЙ AI временно перегружен.";
   }
 };

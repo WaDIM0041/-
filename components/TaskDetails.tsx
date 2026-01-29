@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from 'react';
 import { Task, TaskStatus, UserRole, ROLE_LABELS, TASK_STATUS_LABELS, ProjectFile, FileCategory } from '../types.ts';
 import { 
@@ -76,7 +77,8 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
     }
   }, [isEditingInfo]);
 
-  const canEditInfo = isAdmin || role === UserRole.MANAGER;
+  // Разрешаем редактировать задачу Админу, Руководителю и Менеджеру
+  const canEditInfo = isAdmin || role === UserRole.HEAD || role === UserRole.MANAGER;
 
   const handleStatusChangeWithFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -112,14 +114,14 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
   };
 
   const runAIAudit = async () => {
-    if (task.evidenceUrls.length === 0) {
+    if (task.evidence.length === 0) {
       alert("Для анализа ИИ необходимо наличие фотографий");
       return;
     }
     
     setIsAIAnalyzing(true);
     try {
-      const analysis = await analyzeConstructionTask(task.title, task.description, task.evidenceUrls);
+      const analysis = await analyzeConstructionTask(task.title, task.description, task.evidence);
       const updatedTask = { ...task, aiAnalysis: analysis };
       if (onUpdateTask) onUpdateTask(updatedTask);
       onAddComment(task.id, `🤖 ЗОДЧИЙ AI: Результат проверки - ${analysis.status.toUpperCase()}. ${analysis.feedback}`);
@@ -154,7 +156,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
 
       <div className="flex items-center justify-between mb-6 sm:mb-10">
         <button onClick={onClose} className="flex items-center gap-2 sm:gap-3 text-slate-500 font-black text-[9px] sm:text-[11px] uppercase tracking-widest bg-slate-50 px-3 sm:px-5 py-3 sm:py-4 rounded-xl sm:rounded-2xl border border-slate-100 shadow-sm transition-all active:scale-95">
-          <ChevronLeft size={18} className="sm:w-5 sm:h-5" /> Назад
+          <ChevronLeft size={18} className="sm:w-5 sm:h-5" /> Закрыть
         </button>
         <div className="flex items-center gap-1.5 sm:gap-2">
           {canEditInfo && !isEditingInfo && (
@@ -242,7 +244,7 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
           <div className="flex items-center justify-between px-1">
             <h4 className="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase flex items-center gap-2 sm:gap-3"><Files size={16} className="sm:w-4.5 sm:h-4.5" /> Фотоотчеты</h4>
             <div className="flex gap-1.5 sm:gap-2">
-              {task.evidenceUrls.length > 0 && (
+              {task.evidence.length > 0 && (
                 <button 
                   onClick={runAIAudit}
                   disabled={isAIAnalyzing}
@@ -266,13 +268,13 @@ const TaskDetails: React.FC<TaskDetailsProps> = ({
             </div>
           </div>
           <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-2 gap-3 sm:gap-4">
-            {task.evidenceUrls.length === 0 ? (
+            {task.evidence.length === 0 ? (
               <div className="col-span-full py-12 sm:py-16 bg-slate-50 rounded-2xl sm:rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-2 sm:gap-3 text-slate-300">
                 <Camera size={28} className="sm:w-8 sm:h-8" />
                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider">Нет фото</span>
               </div>
             ) : (
-              task.evidenceUrls.map((url, i) => (
+              task.evidence.map((url, i) => (
                 <div 
                   key={i} 
                   onClick={() => setPreviewImage({ url, index: i })}

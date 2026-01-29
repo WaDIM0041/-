@@ -29,7 +29,8 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, role, isAdmin = false }) => {
     [TaskStatus.REWORK]: 'bg-rose-50 text-rose-700 border-rose-200',
   };
 
-  const evidenceList = task.evidenceUrls || [];
+  // Fixed: Use evidence property from Task interface
+  const evidenceList = task.evidence || [];
   const commentsList = task.comments || [];
   
   return (
@@ -69,6 +70,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, role, isAdmin = false }) => {
       {task.status === TaskStatus.REWORK && (
         <div className="mt-3 bg-rose-50 p-2.5 rounded-xl border border-rose-100 flex items-center gap-2">
            <RotateCcw size={12} className="text-rose-500 shrink-0 sm:w-3.5 sm:h-3.5" />
+           {/* Fixed: supervisorComment is now defined in the Task interface */}
            <span className="text-[9px] font-bold text-rose-700 truncate">{task.supervisorComment || 'Замечание технадзора'}</span>
         </div>
       )}

@@ -1,248 +1,76 @@
 
-import React, { useState, useEffect } from 'react';
-import { Shield, Activity, Users, Eye, Building2, ChevronRight, Lock, User as UserIcon, CheckCircle2, AlertTriangle, ArrowLeft, Settings, Database, Github, Save, CloudOff, RefreshCw, Terminal } from 'lucide-react';
-import { User, UserRole, ROLE_LABELS, APP_VERSION } from '../types.ts';
+import React, { useState } from 'react';
+import { Lock, User as UserIcon, Building2, ChevronRight } from 'lucide-react';
+import { User, UserRole } from '../types.ts';
 
 interface LoginPageProps {
-  users: User[];
   onLogin: (user: User) => void;
-  onApplyInvite: (code: string) => boolean;
-  onReset: () => void;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ users, onLogin, onApplyInvite, onReset }) => {
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(false);
-  
-  const [hasRealCloud, setHasRealCloud] = useState(() => !!localStorage.getItem('zodchiy_cloud_config_stable_v1'));
-  const [showManualSetup, setShowManualSetup] = useState(false);
-  const [setupData, setSetupData] = useState({ token: '', repo: '', path: 'db.json' });
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const invite = params.get('invite');
-    if (invite) {
-      const success = onApplyInvite(invite);
-      if (success) {
-        setHasRealCloud(true);
-        window.history.replaceState({}, '', window.location.pathname);
-      }
-    }
-  }, [onApplyInvite]);
-
-  const handleLogin = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!selectedUser) return;
-    if (password === (selectedUser.password || '123')) {
-      onLogin(selectedUser);
+  const handleFinish = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Простейшая проверка для теста (Админ/123 или Прораб/123)
+    if (username.toLowerCase() === 'админ' && password === '123') {
+      onLogin({ id: 1, username: 'Админ', role: UserRole.ADMIN });
     } else {
-      setError(true);
-      setTimeout(() => setError(false), 2000);
-    }
-  };
-
-  const handleInitialSetup = () => {
-    if (!setupData.token || !setupData.repo) {
-      alert("Заполните токен и репозиторий");
-      return;
-    }
-    const config = { token: setupData.token, repo: setupData.repo, path: setupData.path };
-    localStorage.setItem('zodchiy_cloud_config_stable_v1', JSON.stringify(config));
-    setHasRealCloud(true);
-    setShowManualSetup(false);
-  };
-
-  const getRoleIcon = (role: UserRole) => {
-    switch (role) {
-      case UserRole.ADMIN: return <Shield size={20} />;
-      case UserRole.MANAGER: return <Activity size={20} />;
-      case UserRole.FOREMAN: return <Users size={20} />;
-      case UserRole.SUPERVISOR: return <Eye size={20} />;
-    }
-  };
-
-  const getRoleTheme = (role: UserRole) => {
-    switch (role) {
-      case UserRole.ADMIN: return 'bg-amber-500 text-white';
-      case UserRole.MANAGER: return 'bg-indigo-500 text-white';
-      case UserRole.FOREMAN: return 'bg-blue-500 text-white';
-      case UserRole.SUPERVISOR: return 'bg-emerald-500 text-white';
+      onLogin({ id: Date.now(), username: username || 'Гость', role: UserRole.FOREMAN });
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-4 sm:p-6">
-      {/* Settings Button */}
-      {!hasRealCloud && !selectedUser && !showManualSetup && (
-        <button 
-          onClick={() => setShowManualSetup(true)}
-          className="fixed top-6 right-6 p-3 bg-white border border-slate-100 rounded-2xl shadow-sm text-slate-400 flex items-center gap-2 hover:text-blue-600 transition-all z-50 group"
-        >
-          <Settings size={18} className="group-hover:rotate-90 transition-transform" />
-          <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Настройка</span>
-        </button>
-      )}
-
-      {showManualSetup ? (
-        <div className="w-full max-w-sm animate-in slide-in-from-bottom-8 duration-500 bg-white p-8 rounded-[3rem] text-left shadow-2xl">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl"><Github size={24} /></div>
-            <div>
-              <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter leading-none">Облако</h2>
-              <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest mt-1">Ручная настройка</p>
-            </div>
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-white">
+      <div className="w-full max-w-sm space-y-8 text-center">
+        <div className="space-y-4">
+          <div className="inline-flex p-4 bg-blue-600 rounded-[2rem] shadow-2xl shadow-blue-500/20">
+            <Building2 size={40} />
           </div>
-
-          <div className="space-y-5">
-            <div className="space-y-1">
-              <label className="text-[9px] font-black text-slate-400 uppercase ml-2 tracking-widest">GitHub Token</label>
-              <input 
-                type="password" 
-                value={setupData.token}
-                onChange={e => setSetupData({...setupData, token: e.target.value})}
-                placeholder="ghp_..."
-                className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-5 text-sm font-bold text-slate-900 outline-none focus:ring-4 focus:ring-blue-50 transition-all"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[9px] font-black text-slate-400 uppercase ml-2 tracking-widest">Repository (user/repo)</label>
-              <input 
-                type="text" 
-                value={setupData.repo}
-                onChange={e => setSetupData({...setupData, repo: e.target.value})}
-                placeholder="my-name/my-construction-db"
-                className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-5 text-sm font-bold text-slate-900 outline-none focus:ring-4 focus:ring-blue-50 transition-all"
-              />
-            </div>
-            
-            <div className="flex gap-3 pt-4">
-               <button 
-                onClick={() => setShowManualSetup(false)}
-                className="flex-1 py-5 bg-slate-100 text-slate-500 rounded-2xl font-black text-[10px] uppercase tracking-widest"
-              >
-                Назад
-              </button>
-              <button 
-                onClick={handleInitialSetup}
-                className="flex-[2] py-5 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl"
-              >
-                <Save size={16} /> Сохранить
-              </button>
-            </div>
-          </div>
+          <h1 className="text-3xl font-black uppercase tracking-tighter">Зодчий <span className="text-blue-500">Core</span></h1>
+          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">Управление строительством</p>
         </div>
-      ) : (
-        <div className="w-full max-w-md space-y-8">
-          <div className="text-center">
-            <div className="inline-flex bg-white p-4 rounded-3xl shadow-xl border border-slate-100 mb-6 animate-in zoom-in duration-700">
-              <Building2 size={42} className="text-blue-600" />
-            </div>
-            <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter leading-none">
-              ЗОДЧИЙ <span className="text-blue-600">CORE</span>
-            </h1>
-            <div className="flex items-center justify-center gap-2 mt-3">
-              {!hasRealCloud && <CloudOff size={10} className="text-amber-500" />}
-              <p className={`text-[9px] font-black uppercase tracking-[0.3em] ${!hasRealCloud ? 'text-amber-500' : 'text-slate-400'}`}>
-                {!hasRealCloud ? 'Локальный режим (без облака)' : 'Облачный режим активен'}
-              </p>
-            </div>
-          </div>
 
-          {!selectedUser ? (
-            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {users.length === 0 ? (
-                <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 text-center space-y-6 shadow-xl">
-                   <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto">
-                     <AlertTriangle size={32} />
-                   </div>
-                   <div className="space-y-2">
-                     <h3 className="text-lg font-black uppercase tracking-tight text-slate-800">Ошибка базы</h3>
-                     <p className="text-xs text-slate-500 font-medium">Список пользователей пуст. Это может произойти при очистке кэша браузера или сбое сессии.</p>
-                   </div>
-                   <button 
-                    onClick={onReset}
-                    className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all"
-                   >
-                     <RefreshCw size={18} /> Восстановить систему
-                   </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-3">
-                  {users.map((user) => (
-                    <button 
-                      key={user.id}
-                      onClick={() => setSelectedUser(user)}
-                      className="group flex items-center gap-4 p-4 bg-white rounded-[1.8rem] border border-slate-100 hover:border-blue-500 hover:shadow-lg transition-all active:scale-[0.98] text-left shadow-sm"
-                    >
-                      <div className={`w-12 h-12 rounded-2xl ${getRoleTheme(user.role)} flex items-center justify-center shadow-lg transition-transform group-hover:scale-105 shrink-0`}>
-                        {getRoleIcon(user.role)}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-sm font-black text-slate-800 leading-none mb-1.5 uppercase tracking-tight">{user.username}</h3>
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{ROLE_LABELS[user.role]}</p>
-                      </div>
-                      <ChevronRight className="text-slate-200 group-hover:text-blue-500" size={20} />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-300 text-center relative">
-              <button 
-                onClick={() => { setSelectedUser(null); setPassword(''); }}
-                className="absolute top-6 left-6 p-2 text-slate-300 hover:text-slate-600 transition-colors"
-              >
-                <ArrowLeft size={20} />
-              </button>
-
-              <div className={`w-20 h-20 rounded-[2rem] ${getRoleTheme(selectedUser.role)} flex items-center justify-center mx-auto mb-6 shadow-xl`}>
-                {getRoleIcon(selectedUser.role)}
+        <form onSubmit={handleFinish} className="bg-slate-900 p-8 rounded-[3rem] border border-white/5 shadow-2xl space-y-6">
+          <div className="space-y-4 text-left">
+            <div className="space-y-2">
+              <label className="text-[9px] font-black uppercase text-slate-500 ml-2">Имя пользователя</label>
+              <div className="relative">
+                <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
+                <input 
+                  type="text"
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  placeholder="Админ"
+                  className="w-full bg-slate-950 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold focus:border-blue-500 transition-all outline-none"
+                />
               </div>
-              
-              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter mb-1">{selectedUser.username}</h3>
-              <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-8">{ROLE_LABELS[selectedUser.role]}</p>
-
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="relative">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300">
-                    <Lock size={18} />
-                  </div>
-                  <input 
-                    type="password" 
-                    autoFocus
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Введите пароль"
-                    className={`w-full bg-slate-50 border ${error ? 'border-rose-500 bg-rose-50' : 'border-slate-100'} rounded-2xl px-14 py-5 text-center text-lg font-black tracking-[0.5em] text-slate-900 outline-none transition-all focus:border-blue-500 focus:bg-white`}
-                  />
-                </div>
-                
-                <button 
-                  type="submit"
-                  className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3"
-                >
-                  Войти в систему
-                  <ChevronRight size={18} />
-                </button>
-              </form>
-
-              {error && (
-                <p className="text-[9px] font-black text-rose-500 mt-4 uppercase tracking-widest animate-in slide-in-from-top-2">Неверный пароль</p>
-              )}
             </div>
-          )}
 
-          <div className="pt-8 text-center border-t border-slate-200 flex flex-col items-center gap-2">
-             <div className="flex items-center gap-2 px-3 py-1 bg-slate-900 rounded-lg text-[8px] font-black uppercase tracking-widest text-slate-400">
-               <Terminal size={10} className="text-blue-500" />
-               Zodchiy Core: <span className="text-white">v{APP_VERSION}</span>
-             </div>
-             <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em]">ENTERPRISE EDITION • STABLE</p>
+            <div className="space-y-2">
+              <label className="text-[9px] font-black uppercase text-slate-500 ml-2">Пароль</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
+                <input 
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="123"
+                  className="w-full bg-slate-950 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold focus:border-blue-500 transition-all outline-none"
+                />
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+
+          <button 
+            type="submit"
+            className="w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-2xl font-black uppercase tracking-widest text-[11px] shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
+          >
+            Войти в систему <ChevronRight size={18} />
+          </button>
+        </form>
+      </div>
     </div>
   );
 };
